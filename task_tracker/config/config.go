@@ -9,20 +9,17 @@ import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"os"
-	"strings"
 )
 
 type ServerConfig struct {
 	Node      NodeConfig
 	Logger    config.LoggerConfig
-	Jaeger    config.JaegerConfig
+	Jeager    config.JaegerConfig
 	Request   config.RequestConfig
 	Strategy  config.StrategyConfig
 	Scheduler config.SchedulerConfig
 	Montior   config.MontiorConfig
 	DB        db.DBconfig
-	Redis     config.RedisConfig
-	Lock      config.LockConfig
 }
 
 var ServerCfg *ServerConfig
@@ -67,14 +64,7 @@ func initConfig(serviceId string, cmdRoot string) error {
 		})
 	}()
 	curPath, _ := os.Getwd()
-
-	szPath := strings.Split(curPath, serviceId)
-	if len(szPath) != 2 {
-		return errors.New("config path err " + curPath)
-	}
-
-	//confPath := curPath + "/conf/"
-	confPath := szPath[0] + serviceId + "/conf/"
+	confPath := curPath + "/conf/"
 	configInstance.AddConfigPath(confPath)
 	if !api.FileExists(confPath + "task_tracker.yml") {
 		return errors.New(confPath + "task_tracker.yml do not exist")

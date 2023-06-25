@@ -33,8 +33,8 @@ func serve() error {
 
 	logger.Info("config Info: %v", *c)
 
-	if err := database.InitDB(c.DB.Url, c.DB.DbUser, c.DB.DbPassword, c.DB.DbName, c.DB.Timeout); err != nil {
-		logger.Errorf("init database: %v fail: %v", c.DB, err.Error())
+	if err := database.InitDB(c.DB.Url, c.DB.DbName, c.DB.Timeout); err != nil {
+		logger.Errorf("init database fail %v", c.DB)
 		return nil
 	}
 
@@ -48,7 +48,7 @@ func serve() error {
 	xhttp.ReqConfigInit(c.Request.Max, c.Request.TimeOut)
 
 	//init trace jaeger
-	jaeger := tracing.SetupJaegerTracing("controller_"+LocalServiceId, c.Jaeger.Url)
+	jaeger := tracing.SetupJaegerTracing("mt_node_manager")
 	defer func() {
 		if jaeger != nil {
 			jaeger.Flush()

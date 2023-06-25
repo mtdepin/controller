@@ -43,9 +43,6 @@ func RegisterAPIRouter(router *mux.Router, ck *services.Service) {
 	apiRouter.Methods(http.MethodPost).Path("/callbackUpload").HandlerFunc(
 		maxClients(gz(api.HttpTraceAll(apiHandlers.CallbackUpload))))
 
-	apiRouter.Methods(http.MethodPost).Path("/callbackDownload").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.CallbackDownload))))
-
 	apiRouter.Methods(http.MethodPost).Path("/callbackReplicate").HandlerFunc(
 		maxClients(gz(api.HttpTraceAll(apiHandlers.CallbackReplicate))))
 
@@ -58,25 +55,4 @@ func RegisterAPIRouter(router *mux.Router, ck *services.Service) {
 
 	apiRouter.Methods(http.MethodPost).Path("/downloadFinish").HandlerFunc(
 		maxClients(gz(api.HttpTraceAll(apiHandlers.DownloadFinish))))
-
-	apiRouter.Methods(http.MethodPost).Path("/deleteFid").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.DeleteFid))))
-	apiRouter.Methods(http.MethodPost).Path("/debug/stack").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.DebugStack))))
-
-	apiRouter.Methods(http.MethodGet).Path("/getPageOrders").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.GetPageOrders))))
-
-	apiRouter.Methods(http.MethodGet).Path("/getOrderDetail").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.GetOrderDetail))))
-
-	apiRouter.Methods(http.MethodGet).Path("/getPageFids").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.GetPageFids))))
-
-	apiRouter.Methods(http.MethodGet).Path("/getFidDetail").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.GetFidDetail))))
-
-	apiRouter.Methods(http.MethodPost).Path("/uploadPieceFid").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.UploadPieceFid))))
-
 }

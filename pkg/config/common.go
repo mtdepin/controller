@@ -33,10 +33,8 @@ type PprofConfig struct {
 }
 
 type RedisConfig struct {
-	LockAddress  string
-	LockPassword string
-	FidAddress   string
-	FidPassword  string
+	Url      string
+	Password string
 }
 
 type SearcherConfig struct {
@@ -66,16 +64,4 @@ type SchedulerConfig struct {
 type MontiorConfig struct {
 	AccessToken string
 	Secret      string
-}
-
-type LockConfig struct {
-	Prefix string
-}
-
-type PrometheusConfig struct {
-	Url string
-}
-
-type SuperClusterConfig struct {
-	Region string
 }

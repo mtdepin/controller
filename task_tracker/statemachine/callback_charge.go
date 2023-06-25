@@ -32,19 +32,7 @@ func (p *CallbackCharge) handleChargeSucEvent(event *e.CallbackChargeEvent) erro
 		return err
 	}
 
-	state, err := p.orderStateIndex.GetState(event.OrderId)
-	if err != nil {
-		return err
-	}
-	for _, task := range state.Tasks {
-		for _, rep := range task.Reps {
-			rep.Status = dict.TASK_CHARGE_SUC
-		}
-		task.Status = dict.TASK_CHARGE_SUC
-	}
-	state.Status = dict.TASK_CHARGE_SUC
-
-	return p.orderStateIndex.Update(event.OrderId, state)
+	return p.orderStateIndex.SetStatus(event.OrderId, dict.TASK_CHARGE_SUC)
 }
 
 func (p *CallbackCharge) handleChargeFailEvent(event *e.CallbackChargeEvent) error {

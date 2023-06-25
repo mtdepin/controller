@@ -32,7 +32,7 @@ func (p *Service) Replicate(request *param.ReplicationRequest) (interface{}, err
 	return <-event.Ret, nil
 }
 
-func (p *Service) DeleteOrder(request *param.DeleteOrderRequest) (interface{}, error) {
+func (p *Service) Delete(request *param.DeleteOrderRequest) (interface{}, error) {
 	event := PackageEvent(event.DELETE, request)
 	p.dispatcher.AddDeleteEvent(event)
 	return <-event.Ret, nil
@@ -47,11 +47,5 @@ func (p *Service) Charge(request *param.ChargeRequest) (interface{}, error) {
 func (p *Service) SearchRep(request *param.UploadFinishOrder) (interface{}, error) {
 	event := PackageEvent(event.SEARCHREP, request)
 	p.dispatcher.AddSearchRepEvent(event)
-	return <-event.Ret, nil
-}
-
-func (p *Service) DeleteFid(request *param.DeleteOrderFidRequest) (interface{}, error) {
-	event := PackageEvent(event.DELETE, request)
-	p.dispatcher.AddDeleteFidEvent(event)
 	return <-event.Ret, nil
 }

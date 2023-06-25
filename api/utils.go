@@ -5,11 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"io"
 	"math/rand"
 	"net/http"
 	"os"
-	"runtime"
 	"strings"
 	"time"
 )
@@ -93,23 +91,4 @@ func GetFileModTime(path string) time.Time {
 		return time.Now()
 	}
 	return fi.ModTime()
-}
-
-func WriteAllGoroutineStacks(w io.Writer) error {
-	// this is based on pprof.writeGoroutineStacks, and removes the 64 MB limit
-	buf := make([]byte, 1<<20)
-	for i := 0; ; i++ {
-		n := runtime.Stack(buf, true)
-		if n < len(buf) {
-			buf = buf[:n]
-			break
-		}
-		// if len(buf) >= 64<<20 {
-		// 	// Filled 64 MB - stop there.
-		// 	break
-		// }
-		buf = make([]byte, 2*len(buf))
-	}
-	_, err := w.Write(buf)
-	return err
 }

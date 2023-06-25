@@ -26,16 +26,6 @@ func (p *Strategy) Add(info *dict.StrategyInfo) (err error) {
 	return
 }
 
-func (p *Strategy) Update(orderId string, info *dict.StrategyInfo) (err error) {
-	for i := 0; i < Count; i++ {
-		if _, err = p.db.RepStrategyCollection.Upsert(bson.M{"order_id": orderId}, info); err == nil {
-			return
-		}
-		time.Sleep(time.Duration(TimeInternal) * time.Millisecond)
-	}
-	return
-}
-
 func (p *Strategy) GetStrategy(orderId string) (strategy *dict.StrategyInfo, err error) {
 	for i := 0; i < Count; i++ {
 
@@ -79,33 +69,4 @@ func (p *Strategy) GetOrderStrategyCount(orderId string) (count int, err error) 
 		time.Sleep(time.Duration(TimeInternal) * time.Millisecond)
 	}
 	return
-}
-
-func (p *Strategy) Query(query interface{}, sort string, limit int) (ret *[]dict.StrategyInfo, err error) {
-	for i := 0; i < Count; i++ {
-		if ret, err = p.query(query, sort, limit); err == nil {
-			return
-		}
-		time.Sleep(time.Duration(TimeInternal) * time.Millisecond)
-	}
-
-	return
-}
-
-func (p *Strategy) query(query interface{}, sort string, limit int) (*[]dict.StrategyInfo, error) {
-	records := p.db.RepStrategyCollection.Find(query).Limit(limit).Sort(sort)
-	if records == nil {
-		return nil, errors.New(fmt.Sprintf("getStrategyInfo ,find cond = %v fail", query))
-	}
-	num, err := records.Count()
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("getStrategyInfo ,find cond = %v count fail", query))
-	}
-
-	StrategyInfo := make([]dict.StrategyInfo, 0, num)
-	if err = records.All(&StrategyInfo); err != nil {
-		return nil, err
-	}
-
-	return &StrategyInfo, nil
 }

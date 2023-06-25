@@ -24,18 +24,17 @@ func (p *ChargeProcessor) Init(machine *statemachine.StateMachine, chargeOrderCh
 	p.chargeOrderChan = chargeOrderChan
 
 	//下载，上传订单.
-	orders := p.stateMachine.GetAllOrders(dict.TASK_CHARGE_FAIL)   //对于备份失败的订单重新备份
-	repSucOrders := p.stateMachine.GetAllOrders(dict.TASK_REP_SUC) //备份成功订单。
+	orders := p.stateMachine.GetAllOrders(dict.TASK_CHARGE_FAIL) //对于备份失败的订单重新备份
 
 	p.chanSize = len(orders) + EXTEND_SIZE
 	p.orderEventChan = make(chan *e.OrderChargeEvent, p.chanSize)
 
 	p.initChargeEvent(orders)
-	p.initChargeEvent(repSucOrders)
 
 	logger.Info("----init charge order num: ", len(orders), " chanSize:", p.chanSize)
 
 	go p.Handle()
+	//go p.addEvent()
 	go p.addOrder()
 }
 
@@ -71,7 +70,7 @@ func (p *ChargeProcessor) charge(event *e.OrderChargeEvent) {
 	rsp, err := utils.Charge(event.Request)
 	if err == nil && rsp.Status == param.SUCCESS {
 		if err := p.stateMachine.UpdateOrder(event.Request.OrderId, dict.TASK_CHARGE_SUC); err != nil {
-			utils.Log(utils.ERROR, "ChargeProcessor charge stateMachine.UpdateOrder", err.Error(), event)
+			utils.Log(utils.WARN, "ChargeProcessor charge stateMachine.UpdateOrder", err.Error(), event)
 		}
 
 		return
@@ -90,7 +89,7 @@ func (p *ChargeProcessor) addEventToCache(event *e.OrderChargeEvent) {
 
 		p.orderEventChan <- event
 	} else {
-		utils.Log(utils.ERROR, "ChargeProcessor addEventToCache", fmt.Sprintf("charge count:%d more than %d", event.Count, dict.CHARGE_COUNT), event.Request)
+		utils.Log(utils.WARN, "ChargeProcessor addEventToCache", fmt.Sprintf("charge count:%d more than %d", event.Count, dict.CHARGE_COUNT), event.Request)
 	}
 }
 

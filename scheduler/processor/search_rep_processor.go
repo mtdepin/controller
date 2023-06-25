@@ -1,7 +1,6 @@
 package processor
 
 import (
-	"context"
 	ctl "controller/pkg/http"
 	"controller/scheduler/config"
 	"controller/scheduler/dict"
@@ -73,10 +72,9 @@ func (p *SearchRepProcessor) Search(msg *e.Event) {
 }
 
 func (p *SearchRepProcessor) search(cids string, domainUrl string) (*param.RegionRepResponse, error) {
-
 	nameServerURL := fmt.Sprintf("%s://%s/api/v0/status/%s", config.ServerCfg.Request.Protocol, domainUrl, cids)
 
-	rsp, err1 := ctl.DoRequest(context.Background(), http.MethodGet, nameServerURL, nil, nil)
+	rsp, err1 := ctl.DoRequest(http.MethodGet, nameServerURL, nil, nil)
 	if err1 != nil {
 		return nil, err1
 	}

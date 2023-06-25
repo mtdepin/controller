@@ -62,7 +62,7 @@ func (p *DeleteProcessor) Delete(msg *e.Event) {
 		if rsp, err := p.delete(deleteRequest, domain.Url); err == nil {
 			p.setResponseTask(response, task, rsp.Status)
 		} else {
-			p.setResponseTask(response, task, param.FAIL) //fid, cid, region.
+			p.setResponseTask(response, task, param.FAIL)
 			log(WARN, "DeleteProcessor, delete task ", err.Error(), request)
 		}
 	}
@@ -73,7 +73,7 @@ func (p *DeleteProcessor) Delete(msg *e.Event) {
 func (p *DeleteProcessor) delete(request *param.DeleteRequest, domainUrl string) (*param.DeleteResponse, error) {
 	nameServerURL := fmt.Sprintf("%s://%s/api/v0/pins/%s", config.ServerCfg.Request.Protocol, domainUrl, request.Cid)
 
-	rsp, err1 := ctl.DoRequest(request.Ext.Ctx, http.MethodDelete, nameServerURL, nil, nil)
+	rsp, err1 := ctl.DoRequest(http.MethodDelete, nameServerURL, nil, nil)
 	if err1 != nil {
 		return nil, err1
 	}

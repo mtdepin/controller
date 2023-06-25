@@ -4,8 +4,6 @@ import (
 	"controller/pkg/logger"
 	"controller/task_tracker/database"
 	"controller/task_tracker/dict"
-	"controller/task_tracker/metrics"
-	"controller/task_tracker/watcher"
 	"errors"
 	"fmt"
 	"sync"
@@ -40,49 +38,14 @@ func (p *OrderStateIndex) GetState(orderId string) (*dict.OrderStateInfo, error)
 	return &dict.OrderStateInfo{}, errors.New("orderId not exist")
 }
 
-func (p *OrderStateIndex) AddPieceFid(orderId string, tasks []*dict.Task) error {
-	p.rwLock.Lock()
-	defer p.rwLock.Unlock()
-
-	state, ok := p.orderStateMap[orderId]
-	if !ok {
-		return errors.New(fmt.Sprintf("OrderStateIndex AddPieceFid err, orderId: %v, not find ", orderId))
-	}
-
-	if len(state.Tasks) == 0 {
-		state.Tasks = make(map[string]*dict.Task, state.PieceNum)
-	}
-
-	for _, task := range tasks {
-		state.Tasks[task.Fid] = task
-	}
-
-	return p.updateStore(state)
-}
-
-func (p *OrderStateIndex) TaskInitFinish(orderId string) (bool, error) {
-	p.rwLock.RLock()
-	defer p.rwLock.RUnlock()
-
-	state, ok := p.orderStateMap[orderId]
-	if !ok {
-		return false, errors.New(fmt.Sprintf("OrderStateIndex AddPieceFid err, orderId: %v, not find ", orderId))
-	}
-
-	return state.PieceNum == len(state.Tasks), nil
-
-}
-
 func (p *OrderStateIndex) Update(orderId string, state *dict.OrderStateInfo) error {
 	p.rwLock.Lock()
-	state.UpdateTime = time.Now().UnixMilli()
 	p.orderStateMap[orderId] = state
 	p.rwLock.Unlock()
 
-	return p.updateStore(state)
+	return p.store.Update(state)
 }
 
-//
 func (p *OrderStateIndex) SetTaskUploadStatus(orderId, fid, cid, region, origins string, status int) error {
 	p.rwLock.Lock()
 	defer p.rwLock.Unlock()
@@ -97,12 +60,9 @@ func (p *OrderStateIndex) SetTaskUploadStatus(orderId, fid, cid, region, origins
 		task.Status = status
 		task.Origins = origins
 		state.UpdateTime = time.Now().UnixMilli()
+		//return p.store.Update(state)
 	} else {
 		return errors.New(fmt.Sprintf("OrderStateIndex SetTaskUploadStatus cid :%v err, fid: %v not find , orderId: %v ", cid, fid, orderId))
-	}
-
-	if len(state.Tasks) < state.PieceNum { //还有分片没上报。
-		return p.updateStore(state)
 	}
 
 	bFlag := true
@@ -116,7 +76,7 @@ func (p *OrderStateIndex) SetTaskUploadStatus(orderId, fid, cid, region, origins
 		state.Status = status
 	}
 
-	return p.updateStore(state)
+	return p.store.Update(state)
 }
 
 func (p *OrderStateIndex) SetTaskStatus(orderId, fid, region string, status int) error {
@@ -165,7 +125,7 @@ func (p *OrderStateIndex) SetTaskStatus(orderId, fid, region string, status int)
 	}
 
 	p.rwLock.Unlock()
-	return p.updateStore(state)
+	return p.store.Update(state)
 }
 
 func (p *OrderStateIndex) SetStatus(orderId string, status int) error {
@@ -180,7 +140,7 @@ func (p *OrderStateIndex) SetStatus(orderId string, status int) error {
 	state.UpdateTime = time.Now().UnixMilli()
 
 	p.rwLock.Unlock()
-	return p.updateStore(state)
+	return p.store.Update(state)
 }
 
 func (p *OrderStateIndex) createIndex(states []dict.OrderStateInfo) {
@@ -209,12 +169,19 @@ func (p *OrderStateIndex) copy(src *dict.OrderStateInfo) *dict.OrderStateInfo {
 			Region:  task.Region,
 			Origins: task.Origins,
 			Status:  task.Status,
-			Repeate: task.Repeate,
 		}
 		destTask.Reps = make(map[string]*dict.Rep, len(task.Reps))
 		for region, rep := range task.Reps {
-			newRep := *rep
-			destTask.Reps[region] = &newRep
+			destTask.Reps[region] = &dict.Rep{
+				Region:     rep.Region,
+				VirtualRep: rep.VirtualRep,
+				RealRep:    rep.RealRep,
+				MinRep:     rep.MinRep,
+				MaxRep:     rep.MaxRep,
+				Expire:     rep.Expire,
+				Encryption: rep.Encryption,
+				Status:     rep.Status,
+			}
 		}
 		dest.Tasks[key] = destTask
 	}
@@ -317,8 +284,8 @@ func (p *OrderStateIndex) UpdateOrderRepInfo(orderId string, tasks map[string]*d
 		orderStateInfo.Status = dict.TASK_REP_SUC
 	}
 
-	orderStateInfo.UpdateTime = time.Now().UnixMilli()
-	return p.updateStore(orderStateInfo)
+	// to do save
+	return p.store.Update(orderStateInfo)
 }
 
 func (p *OrderStateIndex) GetAllUploadFinishOrderInfo() []*dict.UploadFinishOrder {
@@ -334,19 +301,18 @@ func (p *OrderStateIndex) GetAllUploadFinishOrderInfo() []*dict.UploadFinishOrde
 	return orders
 }
 
-//获取开始备份订单
-func (p *OrderStateIndex) GetBeginReplicateOrderInfo(orderId string) (*dict.UploadFinishOrder, error) {
+func (p *OrderStateIndex) GetUploadFinishOrderInfo(orderId string) (*dict.UploadFinishOrder, error) {
 	p.rwLock.RLock()
 	defer p.rwLock.RUnlock()
 	if state, ok := p.orderStateMap[orderId]; ok {
-		if state.Status == dict.TASK_BEGIN_REP {
+		if state.Status == dict.TASK_UPLOAD_SUC {
 			return p.getFinishOrderInfo(state), nil
 		} else {
-			return nil, errors.New(fmt.Sprintf("OrderStateIndex, GetBeginReplicateOrderInfo, fail , orderId: %v  state: %d not upload finish ", orderId, state.Status))
+			return nil, errors.New(fmt.Sprintf("OrderStateIndex, GetUploadFinishOrderInfo, fail , orderId: %v  state: %d not upload finish ", orderId, state.Status))
 		}
 	}
 
-	return nil, errors.New(fmt.Sprintf("OrderStateIndex, GetBeginReplicateOrderInfo, fail , orderId: %v not find", orderId))
+	return nil, errors.New(fmt.Sprintf("OrderStateIndex, GetUploadFinishOrderInfo, fail , orderId: %v not find", orderId))
 }
 
 func (p *OrderStateIndex) getFinishOrderInfo(state *dict.OrderStateInfo) *dict.UploadFinishOrder {
@@ -362,11 +328,7 @@ func (p *OrderStateIndex) getFinishOrderInfo(state *dict.OrderStateInfo) *dict.U
 			Regions: make([]string, 0, len(val.Reps)),
 		}
 
-		for region, rep := range val.Reps {
-			if rep.Status == dict.TASK_REP_SUC { //过了掉fid 备份成功的region.
-				continue
-			}
-
+		for region, _ := range val.Reps {
 			taskRequest.Regions = append(taskRequest.Regions, region)
 		}
 
@@ -418,79 +380,4 @@ func (p *OrderStateIndex) GetFidStatus(orderId, fid string) (int, error) {
 	}
 
 	return task.Status, nil
-}
-
-func (p *OrderStateIndex) GetAllOrderIds(status int) []string {
-	p.rwLock.RLock()
-	defer p.rwLock.RUnlock()
-	orderIds := make([]string, 0, len(p.orderStateMap))
-	for orderId, state := range p.orderStateMap {
-		if state.Status == status {
-			orderIds = append(orderIds, orderId)
-		}
-	}
-	return orderIds
-}
-
-func (p *OrderStateIndex) GetAllBeginRepOrderInfo() []*dict.UploadFinishOrder {
-	p.rwLock.RLock()
-	defer p.rwLock.RUnlock()
-	orders := make([]*dict.UploadFinishOrder, 0, len(p.orderStateMap))
-	for _, state := range p.orderStateMap {
-		if state.Status == dict.TASK_BEGIN_REP {
-			order := p.getFinishOrderInfo(state)
-			orders = append(orders, order)
-		}
-	}
-	return orders
-}
-
-func (p *OrderStateIndex) GetStateFromDB(orderId string) (*dict.OrderStateInfo, error) {
-	states, err := p.store.GetOrderStateByOrderId(orderId)
-	if err != nil {
-		return nil, err
-	}
-
-	p.rwLock.RLock()
-	defer p.rwLock.RUnlock()
-	p.orderStateMap[orderId] = &(*states)[0]
-
-	return p.copy(&(*states)[0]), nil
-}
-
-func (p *OrderStateIndex) SetTaskDownloadStatus(orderId, cid, region, origins string, status int) error {
-	p.rwLock.Lock()
-	defer p.rwLock.Unlock()
-	state, ok := p.orderStateMap[orderId]
-	if !ok {
-		return errors.New(fmt.Sprintf("OrderStateIndex SetTaskDownloadStatus cid :%v err, fid: %v, orderId: %v, not find ", cid, orderId))
-	}
-
-	if task, ok := state.Tasks[cid]; ok {
-		task.Cid = cid
-		task.Region = region
-		task.Status = status
-		task.Origins = origins
-		state.UpdateTime = time.Now().UnixMilli()
-	} else {
-		return errors.New(fmt.Sprintf("OrderStateIndex SetTaskDownloadStatus cid :%v err, not find , orderId: %v ", cid, orderId))
-	}
-
-	bFlag := true
-	for _, task := range state.Tasks {
-		if task.Status != status {
-			bFlag = false
-			break
-		}
-	}
-	if bFlag { //全部任务状态为 status ,则订单设置为status.
-		state.Status = status
-	}
-
-	return p.updateStore(state)
-}
-
-func (p *OrderStateIndex) updateStore(state *dict.OrderStateInfo) error {
-	watcher.GlobalTraceWatcher.Add(&metrics.Order{OrderId: state.OrderId, OrderType: state.OrderType, Status: state.Status, UpdateTime: state.UpdateTime})
-	return p.store.Update(state)
 }

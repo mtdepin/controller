@@ -7,37 +7,23 @@ import (
 	"controller/business/config"
 	"controller/business/database"
 	"controller/business/services"
-	"controller/business/version"
 	xhttp "controller/pkg/http"
 	"controller/pkg/logger"
 	utilruntime "controller/pkg/runtime"
 	"controller/pkg/tracing"
 	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/spf13/cobra"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"runtime"
 )
 
 const LocalServiceId = "business"
 
-var mainCmd = &cobra.Command{Use: LocalServiceId}
-
 func main() {
-	runtime.SetBlockProfileRate(1)
-	runtime.SetMutexProfileFraction(1)
-	http.Handle("/metrics", promhttp.Handler())
 	go func() {
-		http.ListenAndServe("0.0.0.0:8981", nil)
+		http.ListenAndServe("0.0.0.0:8888", nil)
 	}()
-	mainCmd.AddCommand(version.Cmd())
-	if mainCmd.Execute() != nil {
-		os.Exit(1)
-	}
-
 	serve()
 }
 
@@ -52,8 +38,8 @@ func serve() error {
 
 	logger.Info("config Info: %v", *c)
 
-	if err := database.InitDB(c.DB.Url, c.DB.DbUser, c.DB.DbPassword, c.DB.DbName, c.DB.Timeout); err != nil {
-		logger.Errorf("init database: %v fail: %v", c.DB, err.Error())
+	if err := database.InitDB(c.DB.Url, c.DB.DbName, c.DB.Timeout); err != nil {
+		logger.Errorf("init database fail %v", c.DB)
 		return nil
 	}
 
@@ -67,13 +53,7 @@ func serve() error {
 	xhttp.ReqConfigInit(c.Request.Max, c.Request.TimeOut)
 
 	//init trace jaeger
-	jaeger := tracing.SetupJaegerTracing("controller_"+LocalServiceId, c.Jaeger.Url)
-	if jaeger == nil {
-		logger.Errorf("init jaeger fail 0")
-	} else {
-		logger.Errorf("init jaeger success 0")
-	}
-
+	jaeger := tracing.SetupJaegerTracing("mt_node_manager")
 	defer func() {
 		if jaeger != nil {
 			jaeger.Flush()

@@ -65,13 +65,3 @@ func (p *Task) GetRequestTaskCount(requestId string) (count int, err error) {
 	}
 	return
 }
-
-func (p *Task) GetOrderTaskCount(OrderId string) (count int, err error) {
-	for i := 0; i < Count; i++ {
-		if count, err = p.db.TaskInfo.Find(bson.M{"order_id": OrderId}).Count(); err == nil {
-			return
-		}
-		time.Sleep(time.Duration(TimeInternal) * time.Millisecond)
-	}
-	return
-}

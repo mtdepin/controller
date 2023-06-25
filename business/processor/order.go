@@ -2,20 +2,16 @@ package processor
 
 import (
 	"bytes"
-	"context"
-	"controller/api"
 	"controller/business/config"
 	"controller/business/database"
 	"controller/business/dict"
 	"controller/business/param"
-	"controller/business/utils"
 	ctl "controller/pkg/http"
 	"controller/pkg/logger"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -24,7 +20,6 @@ type Order struct {
 	uploadRequest   *database.UploadRequest
 	downloadRequest *database.DownloadRequest
 	task            *database.Task
-	fidReplicate    *database.FidReplication
 	domainMap       map[string]*dict.DomainInfo
 }
 
@@ -34,9 +29,6 @@ func (p *Order) Init(db *database.DataBase) {
 
 	p.downloadRequest = new(database.DownloadRequest)
 	p.downloadRequest.Init(db)
-
-	p.fidReplicate = new(database.FidReplication)
-	p.fidReplicate.Init(db)
 
 	p.task = new(database.Task)
 	p.task.Init(db)
@@ -57,8 +49,8 @@ func (p *Order) Init(db *database.DataBase) {
 
 }
 
-func (p *Order) CreateUploadOrder(request *api.UploadTaskRequest) (interface{}, error) {
-	if enough, err := p.CheckAccountBalance(&api.CheckBalanceRequest{UserId: request.UserId, Ext: request.Ext}); err != nil || enough == false {
+func (p *Order) CreateUploadOrder(request *param.UploadTaskRequest) (interface{}, error) {
+	if enough, err := p.CheckAccountBalance(&param.CheckBalanceRequest{UserId: request.UserId}); err != nil || enough == false {
 		if err != nil {
 			return nil, err
 		}
@@ -67,54 +59,34 @@ func (p *Order) CreateUploadOrder(request *api.UploadTaskRequest) (interface{}, 
 		}
 	}
 
-	region, err := p.selectUploadRegion(request)
-	if err != nil {
-		return nil, err
-	}
-
-	request.Group = region
-
-	//set region.
 	nodes, err := p.getNodeList(request)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(nodes) == 0 { //没有上传节点，创建任务失败.
-		return nil, errors.New("upload node not exist")
 	}
 
 	if err := p.saveRequest(request); err != nil {
 		return nil, err
 	}
 
-	orderTask, err := p.createOrderTask(&api.CreateTaskRequest{RequestId: request.RequestId, Type: param.UPLOAD, Ext: request.Ext})
+	orderTask := &param.OrderTaskResponse{}
+	orderTask, err = p.createOrderTask(&param.CreateTaskRequest{RequestId: request.RequestId, Type: param.UPLOAD})
 	if err != nil {
 		return nil, err
 	}
 
-	return &api.UploadTaskResponse{
+	if err := p.saveTaskInfo(orderTask.OrderId, request); err != nil {
+		return nil, err
+	}
+
+	_, err = p.createStrategy(&param.CreateStrategyRequest{RequestId: request.RequestId, OrderId: orderTask.OrderId})
+	if err != nil {
+		return nil, err
+	}
+
+	return &param.UploadTaskResponse{
 		Status:   param.SUCCESS,
 		OrderId:  orderTask.OrderId,
 		NodeList: nodes,
-		Group:    region,
-	}, nil
-}
-
-func (p *Order) UploadPieceFid(request *api.UploadPieceFidRequest) (interface{}, error) {
-	if err := p.saveTaskInfo(request.OrderId, request); err != nil {
-		return nil, err
-	}
-
-	rsp, err := p.uploadPieceFid(request)
-	if err != nil {
-		return nil, err
-	}
-
-	return &api.UploadPieceFidResponse{
-		OrderId: request.OrderId,
-		RepFids: rsp.RepFids,
-		Status:  param.SUCCESS,
 	}, nil
 }
 
@@ -126,7 +98,7 @@ func (p *Order) DownloadFinish(request *param.DownloadFinishRequest) (interface{
 	return p.downloadFinish(request)
 }
 
-func (p *Order) saveRequest(request *api.UploadTaskRequest) error {
+func (p *Order) saveRequest(request *param.UploadTaskRequest) error {
 	orgRequestInfo := p.generateUploadRequestInfo(request)
 	//判断request_id是否已经存在
 	count, err := p.uploadRequest.GetOrgRequestCount(request.RequestId)
@@ -154,11 +126,8 @@ func (p *Order) saveDownloadRequest(request *param.DownloadTaskRequest) error {
 	return p.downloadRequest.Add(downloadRequest)
 }
 
-func (p *Order) saveTaskInfo(orderId string, request *api.UploadPieceFidRequest) error {
-	if len(request.Pieces) == 0 {
-		return errors.New("saveTaskInfo fail, len(request.Pieces) == 0 : order_id:" + orderId)
-	}
-
+func (p *Order) saveTaskInfo(orderId string, request *param.UploadTaskRequest) error {
+	//已经存在.
 	count, err := p.task.GetRequestTaskCount(request.RequestId)
 	if err != nil {
 		return err
@@ -171,8 +140,7 @@ func (p *Order) saveTaskInfo(orderId string, request *api.UploadPieceFidRequest)
 
 	for _, task := range tasks {
 		if err := p.task.Add(task); err != nil {
-			bt, _ := json.Marshal(task)
-			logger.Warnf("saveTaskInfo to db fail, orderId: %v, err: %v, task:%v", orderId, err.Error(), string(bt))
+			logger.Warn(" saveTaskInfo to db fail, err: %v, task:%v", err.Error(), *task)
 			return err
 		}
 	}
@@ -180,12 +148,12 @@ func (p *Order) saveTaskInfo(orderId string, request *api.UploadPieceFidRequest)
 	return nil
 }
 
-func (p *Order) getNodeList(request *api.UploadTaskRequest) ([]*api.Node, error) {
+func (p *Order) getNodeList(request *param.UploadTaskRequest) ([]string, error) {
 	if request.UploadType == param.HaveDevice {
 		return request.NasList, nil
 	}
 
-	nodes, err := p.getNodeListFromRM(&api.GetKNodesRequest{Group: request.Group, NodeNum: request.NodeNum, Ext: request.Ext})
+	nodes, err := p.getNodeListFromRM(&param.NodeListRequst{Group: request.Group, Tag: ""})
 	if err != nil {
 		return nil, err
 	}
@@ -196,26 +164,24 @@ func (p *Order) getNodeList(request *api.UploadTaskRequest) ([]*api.Node, error)
 	return nodes.Knodes, nil
 }
 
-func (p *Order) getNodeListFromRM(request *api.GetKNodesRequest) (*api.NodeListResponse, error) {
+func (p *Order) getNodeListFromRM(request *param.NodeListRequst) (*param.NodeListResponse, error) {
 	domain, ok := p.domainMap[request.Group]
 	if !ok {
-		bt, _ := json.Marshal(p.domainMap)
-		return nil, errors.New(fmt.Sprintf("getUploadNodeListFromRM group: %v not exit in domian: %v", request.Group, string(bt)))
+		return nil, errors.New(fmt.Sprintf("getNodeListFromRM group: %v not exit in domian ", domain))
 	}
 
 	url := fmt.Sprintf("%s://%s/api/v0/nodelist", config.ServerCfg.Request.Protocol, domain.Url)
 
 	queryParam := make(map[string]string, 3)
 	queryParam["group"] = request.Group
-	queryParam["tag"] = ""
-	queryParam["node_num"] = strconv.Itoa(request.NodeNum)
+	queryParam["tag"] = request.Tag
 
-	rsp, err := ctl.DoRequest(request.Ext.Ctx, http.MethodGet, url, queryParam, nil)
-	if err != nil {
-		return nil, err
+	rsp, err1 := ctl.DoRequest(http.MethodGet, url, queryParam, nil)
+	if err1 != nil {
+		return nil, err1
 	}
 
-	ret := &api.NodeListResponse{}
+	ret := &param.NodeListResponse{}
 	if err := json.Unmarshal(rsp, ret); err != nil {
 		return nil, err
 	}
@@ -223,59 +189,23 @@ func (p *Order) getNodeListFromRM(request *api.GetKNodesRequest) (*api.NodeListR
 		return nil, errors.New("get nodelist from rm fail")
 	}
 
-	logger.Infof("helo getUploadNodelist: region: %v, request.NodeNum: %v, url: %v, response: %v", request.Group, request.NodeNum, url, string(rsp))
-
-	if len(ret.Knodes) == 0 {
-		ret.Status = param.FAIL //如果节点为空，设置返回失败。
-		logger.Warn("get node from rm is empty, url: ", url)
-	}
-
 	return ret, nil
 }
 
-func (p *Order) createOrderTask(request *api.CreateTaskRequest) (*api.CreateTaskResponse, error) {
+func (p *Order) createOrderTask(request *param.CreateTaskRequest) (*param.OrderTaskResponse, error) {
 	nameServerURL := fmt.Sprintf("%s://%s/task_tracker/v1/createTask", config.ServerCfg.Request.Protocol, config.ServerCfg.TaskTracker.Url)
 
-	ctx := request.Ext.Ctx
-	request.Ext = nil
 	bt, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
 	}
 
-	rsp, err := ctl.DoRequest(ctx, http.MethodPost, nameServerURL, nil, bytes.NewReader(bt))
-	if err != nil {
-		return nil, err
-	}
-
-	ret := &api.CreateTaskResponse{}
-	if err := json.Unmarshal(rsp, ret); err != nil {
-		return nil, err
-	}
-
-	if ret.Status != param.SUCCESS {
-		return nil, errors.New("create order task fail")
-	}
-
-	return ret, nil
-}
-
-func (p *Order) uploadPieceFid(request *api.UploadPieceFidRequest) (*api.UploadPieceFidResponse, error) {
-	nameServerURL := fmt.Sprintf("%s://%s/task_tracker/v1/uploadPieceFid", config.ServerCfg.Request.Protocol, config.ServerCfg.TaskTracker.Url)
-
-	ctx := request.Ext.Ctx
-	request.Ext = nil
-	bt, err := json.Marshal(request)
-	if err != nil {
-		return nil, err
-	}
-
-	rsp, err1 := ctl.DoRequest(ctx, http.MethodPost, nameServerURL, nil, bytes.NewReader(bt))
+	rsp, err1 := ctl.DoRequest(http.MethodPost, nameServerURL, nil, bytes.NewReader(bt))
 	if err1 != nil {
 		return nil, err1
 	}
 
-	ret := &api.UploadPieceFidResponse{}
+	ret := &param.OrderTaskResponse{}
 	if err := json.Unmarshal(rsp, ret); err != nil {
 		return nil, err
 	}
@@ -295,7 +225,7 @@ func (p *Order) createStrategy(request *param.CreateStrategyRequest) (*param.Cre
 		return nil, err
 	}
 
-	rsp, err1 := ctl.DoRequest(request.Ext.Ctx, http.MethodPost, url, nil, bytes.NewReader(bt))
+	rsp, err1 := ctl.DoRequest(http.MethodPost, url, nil, bytes.NewReader(bt))
 	if err1 != nil {
 		return nil, err1
 	}
@@ -311,7 +241,7 @@ func (p *Order) createStrategy(request *param.CreateStrategyRequest) (*param.Cre
 	return ret, nil
 }
 
-func (p *Order) CheckAccountBalance(request *api.CheckBalanceRequest) (bool, error) {
+func (p *Order) CheckAccountBalance(request *param.CheckBalanceRequest) (bool, error) {
 	url := fmt.Sprintf("%s://%s/account/v1/checkBalance", config.ServerCfg.Request.Protocol, config.ServerCfg.Account.Url)
 
 	bt, err := json.Marshal(request)
@@ -319,12 +249,12 @@ func (p *Order) CheckAccountBalance(request *api.CheckBalanceRequest) (bool, err
 		return false, err
 	}
 
-	rsp, err1 := ctl.DoRequest(request.Ext.Ctx, http.MethodPost, url, nil, bytes.NewReader(bt))
+	rsp, err1 := ctl.DoRequest(http.MethodPost, url, nil, bytes.NewReader(bt))
 	if err1 != nil {
 		return false, err1
 	}
 
-	ret := &api.CheckBalanceResponse{}
+	ret := &param.CheckBalanceResponse{}
 	if err := json.Unmarshal(rsp, ret); err != nil {
 		return false, err
 	}
@@ -343,7 +273,7 @@ func (p *Order) uploadFinish(request *param.UploadFinishRequest) (interface{}, e
 		return false, err
 	}
 
-	rsp, err1 := ctl.DoRequest(request.Ext.Ctx, http.MethodPost, url, nil, bytes.NewReader(bt))
+	rsp, err1 := ctl.DoRequest(http.MethodPost, url, nil, bytes.NewReader(bt))
 	if err1 != nil {
 		return false, err1
 	}
@@ -356,7 +286,7 @@ func (p *Order) uploadFinish(request *param.UploadFinishRequest) (interface{}, e
 	return ret, nil
 }
 
-func (p *Order) generateUploadRequestInfo(req *api.UploadTaskRequest) *dict.UploadRequestInfo {
+func (p *Order) generateUploadRequestInfo(req *param.UploadTaskRequest) *dict.UploadRequestInfo {
 	if req == nil {
 		return nil
 	}
@@ -365,21 +295,15 @@ func (p *Order) generateUploadRequestInfo(req *api.UploadTaskRequest) *dict.Uplo
 		RequestId:  req.RequestId,
 		UserId:     req.UserId,
 		UploadType: req.UploadType,
-		PieceNum:   req.PieceNum,
+		Tasks:      make([]*dict.UploadTask, 0, len(req.Tasks)),
 		Group:      req.Group,
-		Name:       req.Name,
-		Size:       req.Size,
-		RemoteIp:   req.RemoteIp,
-		NasList:    make([]*dict.Node, 0, len(req.NasList)),
+		NasList:    req.NasList,
 		CreateTime: time.Now().UnixMilli(),
 		UpdateTime: time.Now().UnixMilli(),
 	}
-	for _, node := range req.NasList {
-		uploadRequestInfo.NasList = append(uploadRequestInfo.NasList, &dict.Node{
-			Address: node.Address,
-			Weight:  node.Weight,
-			RtcId:   node.RtcId,
-		})
+
+	for _, task := range req.Tasks {
+		uploadRequestInfo.Tasks = append(uploadRequestInfo.Tasks, task)
 	}
 
 	return uploadRequestInfo
@@ -406,13 +330,13 @@ func (p *Order) generateDownloadRequestInfo(req *param.DownloadTaskRequest) *dic
 	return downloadRequestInfo
 }
 
-func (p *Order) generateTaskInfo(orderId string, req *api.UploadPieceFidRequest) []*dict.TaskInfo {
+func (p *Order) generateTaskInfo(orderId string, req *param.UploadTaskRequest) []*dict.TaskInfo {
 	if req == nil {
 		return nil
 	}
 
-	tasks := make([]*dict.TaskInfo, 0, len(req.Pieces))
-	for _, task := range req.Pieces {
+	tasks := make([]*dict.TaskInfo, 0, len(req.Tasks))
+	for _, task := range req.Tasks {
 		tasks = append(tasks, &dict.TaskInfo{
 			Fid:        task.Fid,
 			Cid:        "",
@@ -434,11 +358,27 @@ func (p *Order) generateTaskInfo(orderId string, req *api.UploadPieceFidRequest)
 			UpdateTime: time.Now().UnixMilli(),
 		})
 	}
+
 	return tasks
 }
 
+func addDomainRecord(domain *database.Domain) {
+	err := domain.Add(&dict.DomainInfo{
+		Id:         1,
+		Region:     "chengdu",
+		Url:        "192.168.2.35:9094",
+		Status:     dict.SUCCESS,
+		CreateTime: time.Now().UnixMilli(),
+		UpdateTime: time.Now().UnixMilli(),
+	})
+
+	if err != nil {
+		logger.Errorf(" add damain record fail , err: %v", err.Error())
+	}
+}
+
 func (p *Order) CreateDownloadOrder(request *param.DownloadTaskRequest) (interface{}, error) {
-	if enough, err := p.CheckAccountBalance(&api.CheckBalanceRequest{UserId: request.UserId, Ext: &api.Extend{Ctx: request.Ext.Ctx}}); err != nil || enough == false {
+	if enough, err := p.CheckAccountBalance(&param.CheckBalanceRequest{UserId: request.UserId}); err != nil || enough == false {
 		if err != nil {
 			return nil, err
 		}
@@ -447,9 +387,9 @@ func (p *Order) CreateDownloadOrder(request *param.DownloadTaskRequest) (interfa
 		}
 	}
 
-	cids, mCidFid := p.parseTask(request.Tasks)
+	cids := p.convertCids(request.Tasks)
 
-	nodes, err := p.getDownloadNodes(request.Ext.Ctx, request.Group, cids, mCidFid)
+	nodes, err := p.getDownloadNodesFromRM(request.Group, cids)
 	if err != nil {
 		return nil, err
 	}
@@ -458,7 +398,8 @@ func (p *Order) CreateDownloadOrder(request *param.DownloadTaskRequest) (interfa
 		return nil, err
 	}
 
-	orderTask, err := p.createOrderTask(&api.CreateTaskRequest{RequestId: request.RequestId, Type: param.DOWNLOAD, Ext: &api.Extend{Ctx: request.Ext.Ctx}})
+	orderTask := &param.OrderTaskResponse{}
+	orderTask, err = p.createOrderTask(&param.CreateTaskRequest{RequestId: request.RequestId, Type: param.DOWNLOAD})
 	if err != nil {
 		return nil, err
 	}
@@ -468,26 +409,6 @@ func (p *Order) CreateDownloadOrder(request *param.DownloadTaskRequest) (interfa
 		OrderId: orderTask.OrderId,
 		Nodes:   nodes.Data,
 	}, nil
-}
-
-func (p *Order) parseTask(tasks []*dict.DownloadTask) (string, map[string]string) {
-	var builder strings.Builder
-	nLen := len(tasks) - 1
-	mCidFid := make(map[string]string, nLen)
-
-	if nLen < 0 {
-		return "", mCidFid
-	}
-
-	for i := 0; i < nLen; i++ {
-		builder.WriteString(tasks[i].Cid)
-		mCidFid[tasks[i].Cid] = tasks[i].Fid
-		builder.WriteString(",")
-	}
-	builder.WriteString(tasks[nLen].Cid)
-	mCidFid[tasks[nLen].Cid] = tasks[nLen].Fid
-
-	return builder.String(), mCidFid
 }
 
 func (p *Order) convertCids(tasks []*dict.DownloadTask) string {
@@ -507,52 +428,14 @@ func (p *Order) convertCids(tasks []*dict.DownloadTask) string {
 	return builder.String()
 }
 
-func (p *Order) getDownloadNodes(ctx context.Context, group, cids string, mCidFid map[string]string) (*param.GetDownloadNodeResponse, error) {
-	downloadNodes, err := p.getDownloadNodesFromRM(ctx, group, cids)
-	if err != nil {
-		return nil, err
-	}
-
-	for cid, nodes := range downloadNodes.Data {
-		notExist := true
-		for _, node := range nodes { //权重都为0 则不存在。
-			if node.Weight != 0 {
-				notExist = false //存在.
-				break
-			}
-		}
-
-		//to do seach cid and upload region
-		if notExist {
-			fidInfo, err := p.fidReplicate.Search(mCidFid[cid])
-			if err != nil {
-				return nil, errors.New("err: " + err.Error() + "cid: " + cid)
-			}
-
-			cidAddr, err := p.getDownloadNodesFromRM(ctx, fidInfo.Region, cid)
-			if err != nil {
-				return nil, errors.New("err: " + err.Error() + "cid: " + cid)
-			}
-
-			downloadNodes.Data[cid] = cidAddr.Data[cid]
-		}
-	}
-	//to do print
-	//bt, _ := json.Marshal(downloadNodes)
-	//logger.Infof("helo_download_nodelist: %v", string(bt))
-
-	return downloadNodes, nil
-}
-
-func (p *Order) getDownloadNodesFromRM(ctx context.Context, group, cids string) (*param.GetDownloadNodeResponse, error) {
+func (p *Order) getDownloadNodesFromRM(group, cids string) (*param.GetDownloadNodeResponse, error) {
 	domain, ok := p.domainMap[group]
 	if !ok {
-		bt, _ := json.Marshal(p.domainMap)
-		return nil, errors.New(fmt.Sprintf("helo_getDownloadNodesFromRM group: %v not exit in domian: %v", group, string(bt)))
+		return nil, errors.New(fmt.Sprintf("getNodeListFromRM group: %v not exit in domian ", domain))
 	}
 
 	url := fmt.Sprintf("%s://%s/api/v0/nodes/%s", config.ServerCfg.Request.Protocol, domain.Url, cids)
-	rsp, err1 := ctl.DoRequest(ctx, http.MethodGet, url, nil, nil)
+	rsp, err1 := ctl.DoRequest(http.MethodGet, url, nil, nil)
 	if err1 != nil {
 		return nil, err1
 	}
@@ -565,6 +448,9 @@ func (p *Order) getDownloadNodesFromRM(ctx context.Context, group, cids string) 
 		return nil, errors.New("get download nodelist from rm fail")
 	}
 
+	/*bt, _ := json.Marshal(ret)
+	logger.Infof("helo getDownloadNodesFromRM, url:", url, "rsp:", string(bt))
+	*/
 	return ret, nil
 }
 
@@ -576,7 +462,7 @@ func (p *Order) downloadFinish(request *param.DownloadFinishRequest) (interface{
 		return false, err
 	}
 
-	rsp, err1 := ctl.DoRequest(request.Ext.Ctx, http.MethodPost, url, nil, bytes.NewReader(bt))
+	rsp, err1 := ctl.DoRequest(http.MethodPost, url, nil, bytes.NewReader(bt))
 	if err1 != nil {
 		return false, err1
 	}
@@ -587,46 +473,4 @@ func (p *Order) downloadFinish(request *param.DownloadFinishRequest) (interface{
 	}
 
 	return ret, nil
-}
-
-func (p *Order) DeleteFid(request *param.DeleteFidRequest) (interface{}, error) {
-	url := fmt.Sprintf("%s://%s/task_tracker/v1/deleteFid", config.ServerCfg.Request.Protocol, config.ServerCfg.TaskTracker.Url)
-
-	bt, err := json.Marshal(request)
-	if err != nil {
-		return false, err
-	}
-
-	rsp, err := ctl.DoRequest(request.Ext.Ctx, http.MethodPost, url, nil, bytes.NewReader(bt))
-	if err != nil {
-		return false, err
-	}
-
-	ret := &param.DeleteFidResponse{}
-	if err := json.Unmarshal(rsp, ret); err != nil {
-		return false, err
-	}
-
-	return ret, nil
-}
-
-func (p *Order) selectUploadRegion(request *api.UploadTaskRequest) (string, error) {
-	rsp, err := utils.GetRmSpaceInfo(request.Ext.Ctx, request.Group)
-	if err != nil {
-		return "", err
-	}
-
-	if rsp.Region == nil {
-		return "", errors.New("selectUploadRegion GetRmSpaceInfo  region is nul")
-	}
-
-	if rsp.Region.ValidStorage > dict.RM_LFTESPACE_THRESHOLD {
-		return request.Group, nil
-	}
-
-	if _, ok := p.domainMap[config.ServerCfg.SuperCluster.Region]; !ok {
-		return "", errors.New("super region not exist")
-	}
-
-	return config.ServerCfg.SuperCluster.Region, nil
 }

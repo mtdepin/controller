@@ -1,7 +1,6 @@
 package database
 
 import (
-	"controller/pkg/logger"
 	"controller/strategy/dict"
 	"errors"
 	"fmt"
@@ -17,7 +16,28 @@ func (p *FidReplication) Init(db *DataBase) {
 	p.db = db
 }
 
-func (p *FidReplication) Search(fid string) (ret *dict.FidInfo, err error) {
+func (p *FidReplication) Add(info *dict.FidInfo) (err error) {
+	for i := 0; i < Count; i++ {
+		if err = p.db.FidReplication.Insert(info); err == nil {
+			return
+		}
+		time.Sleep(time.Duration(TimeInternal) * time.Millisecond)
+	}
+	return
+}
+
+func (p *FidReplication) Search(fids []string) (ret []*dict.FidInfo, err error) {
+	for i := 0; i < Count; i++ {
+		if ret, err = p.getFidInfos(fids); err == nil {
+			return
+		}
+		time.Sleep(time.Duration(TimeInternal) * time.Millisecond)
+	}
+
+	return
+}
+
+func (p *FidReplication) GetFidInfo(fid string) (ret *dict.FidInfo, err error) {
 	for i := 0; i < Count; i++ {
 		if ret, err = p.getFidInfo(fid); err == nil {
 			return
@@ -28,41 +48,39 @@ func (p *FidReplication) Search(fid string) (ret *dict.FidInfo, err error) {
 	return
 }
 
-func (p *FidReplication) Update(fid string, value interface{}) (err error) {
-	for i := 0; i < Count; i++ {
-		if err = p.update(fid, value); err == nil {
-			return
-		}
-		time.Sleep(time.Duration(TimeInternal) * time.Millisecond)
+func (p *FidReplication) getFidInfos(fids []string) ([]*dict.FidInfo, error) {
+	records := p.db.FidReplication.Find(bson.M{"fid": bson.M{"in": fids}})
+	if records == nil {
+		return nil, errors.New(fmt.Sprintf("getFidInfo ,find fid = %s fail", fids))
+	}
+	num, err := records.Count()
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("getFidInfo ,find fid = %s count fail", fids))
 	}
 
-	return
-}
-
-func (p *FidReplication) Delete(fid string) (err error) {
-	for i := 0; i < Count; i++ {
-		logger.Infof("delete fid: %v", fid)
-		if err = p.db.FidReplication.Remove(bson.M{"fid": fid}); err == nil {
-			return
-		}
-		time.Sleep(time.Duration(TimeInternal) * time.Millisecond)
+	FidInfos := make([]*dict.FidInfo, 0, num)
+	if err = records.All(&FidInfos); err != nil {
+		return nil, err
 	}
 
-	return
+	if len(FidInfos) == 0 {
+		return nil, errors.New(fmt.Sprintf("getFidInfo ,find fids = %s no document fail", fids))
+	}
+
+	return FidInfos, nil
 }
 
 func (p *FidReplication) getFidInfo(fid string) (*dict.FidInfo, error) {
 	records := p.db.FidReplication.Find(bson.M{"fid": fid})
 	if records == nil {
-		return nil, errors.New(fmt.Sprintf("getDownloadRequst ,find request_id = %s fail", fid))
+		return nil, errors.New(fmt.Sprintf("getFidInfo ,find fid = %s fail", fid))
 	}
 	num, err := records.Count()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("getDownloadRequst ,find request_id = %s count fail", fid))
+		return nil, errors.New(fmt.Sprintf("getFidInfo ,find fid = %s count fail", fid))
 	}
 
 	FidInfos := make([]dict.FidInfo, 0, num)
-
 	if err = records.All(&FidInfos); err != nil {
 		return nil, err
 	}
@@ -74,12 +92,23 @@ func (p *FidReplication) getFidInfo(fid string) (*dict.FidInfo, error) {
 	return &FidInfos[0], nil
 }
 
-func (p *FidReplication) update(fid string, value interface{}) error {
-	_, err := p.db.FidReplication.Upsert(bson.M{"fid": fid}, value)
-
-	//to do add log
-	logger.Infof("update fid: %v, value: %v", fid, value)
-	return err
+func (p *FidReplication) UpdateFidInfo(fid string, info *dict.FidInfo) (err error) {
+	for i := 0; i < Count; i++ {
+		updateInfo := bson.M{"$set": info}
+		if err = p.db.FidReplication.Update(bson.M{"fid": fid}, updateInfo); err == nil {
+			return
+		}
+		time.Sleep(time.Duration(TimeInternal) * time.Millisecond)
+	}
+	return
 }
 
-//coll.Upsert(M{"_id": n}, M{"$set": M{"a2": &a}})
+func (p *FidReplication) RemoveFidInfo(fid string) (err error) {
+	for i := 0; i < Count; i++ {
+		if err = p.db.FidReplication.Remove(bson.M{"fid": fid}); err == nil {
+			return
+		}
+		time.Sleep(time.Duration(TimeInternal) * time.Millisecond)
+	}
+	return
+}

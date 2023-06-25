@@ -2,25 +2,27 @@ package processor
 
 import (
 	"controller/pkg/logger"
-	"controller/task_tracker/database"
 	"controller/task_tracker/dict"
 	e "controller/task_tracker/event"
 	"controller/task_tracker/param"
 	"controller/task_tracker/statemachine"
-	"gopkg.in/mgo.v2/bson"
 )
 
 type CallbackUploadProcessor struct {
 	stateMachine *statemachine.StateMachine
-	fidReplicate *database.FidReplication
 }
 
-func (p *CallbackUploadProcessor) Init(machine *statemachine.StateMachine, fidReplicate *database.FidReplication) {
+func (p *CallbackUploadProcessor) Init(machine *statemachine.StateMachine) {
 	p.stateMachine = machine
-	p.fidReplicate = fidReplicate
 }
 
 func (p *CallbackUploadProcessor) Process(request *param.CallbackUploadRequest) (interface{}, error) {
+	/*if _, err := p.stateMachine.GetOrderStatus(request.OrderId); err != nil { //订单不存在直接返回成功.
+		return param.CallbackUploadResponse{
+			Status: param.SUCCESS,
+		}, nil
+	}*/
+
 	fidStatus, er := p.stateMachine.GetFidStatus(request.OrderId, request.Fid) //如果文件已经上传成功了，或者fid不存在，直接返回.
 	if er != nil {
 		return param.CallbackUploadResponse{
@@ -28,19 +30,12 @@ func (p *CallbackUploadProcessor) Process(request *param.CallbackUploadRequest) 
 		}, nil
 	}
 
-	if fidStatus >= dict.TASK_UPLOAD_SUC { //上传成功了， 幂等, 任务备份成功或者失败，都不用在处理.
-		logger.Infof("CallbackUploadProcessor Process fid repeat, order_id : %v, fid: %v, request: %v ", request.OrderId, request.Fid, *request)
+	if fidStatus >= dict.TASK_UPLOAD_SUC { //幂等， 过滤任务已经上传成功了。
+		logger.Info("CallbackUploadProcessor Process fid repeat ", request.OrderId, request.Fid, *request)
 		return param.CallbackUploadResponse{
 			Status: param.SUCCESS,
 		}, nil
 	}
-
-	if err := p.fidReplicate.Update(request.Fid, bson.M{"$set": bson.M{"cid": request.Cid, "region": request.Region, "origins": request.Origins}}); err != nil {
-		logger.Infof("CallbackUploadProcessor ProcessfidReplicate.UpdateCid fail: order_id : %v, fid: %v, err: %v ", request.OrderId, request.Fid, err.Error())
-		return nil, err
-	}
-
-	logger.Infof("CallbackUploadProcessor ProcessfidReplicate UpdateCid: order_id : %v, fid: %v, region: %v", request.OrderId, request.Fid, request.Region)
 
 	event, err := p.generateCallbackUploadEvent(request)
 	if err != nil {

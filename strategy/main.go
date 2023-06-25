@@ -11,34 +11,14 @@ import (
 	"controller/strategy/config"
 	"controller/strategy/database"
 	"controller/strategy/services"
-	"controller/strategy/version"
 	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/spf13/cobra"
 	"net"
-	"net/http"
 	"os"
-	"runtime"
 )
 
 const LocalServiceId = "strategy"
 
-var mainCmd = &cobra.Command{Use: LocalServiceId}
-
 func main() {
-	runtime.GOMAXPROCS(8 * runtime.NumCPU())
-	runtime.SetBlockProfileRate(1)
-	runtime.SetMutexProfileFraction(1)
-	http.Handle("/metrics", promhttp.Handler())
-	go func() {
-		http.ListenAndServe("0.0.0.0:8982", nil)
-	}()
-
-	mainCmd.AddCommand(version.Cmd())
-	if mainCmd.Execute() != nil {
-		os.Exit(1)
-	}
-
 	serve()
 }
 
@@ -51,14 +31,13 @@ func serve() error {
 	}
 	config.ServerCfg = c
 
-	if err := database.InitDB(c.DB.Url, c.DB.DbUser, c.DB.DbPassword, c.DB.DbName, c.DB.Timeout); err != nil {
-		logger.Errorf("init database: %v fail: %v", c.DB, err.Error())
+	if err := database.InitDB(c.DB.Url, c.DB.DbName, c.DB.Timeout); err != nil {
+		logger.Errorf("init database fail %v", c.DB)
 		return nil
 	}
 
 	//init logger
 	logger.InitLogger(c.Logger.Level)
-	logger.Info("server config:", *c)
 
 	//Set system resources to maximum
 	if err := api.SetMaxResources(); err != nil {
@@ -67,12 +46,7 @@ func serve() error {
 	xhttp.ReqConfigInit(c.Request.Max, c.Request.TimeOut)
 
 	//init trace jaeger
-	jaeger := tracing.SetupJaegerTracing("controller"+LocalServiceId, c.Jaeger.Url)
-	if jaeger == nil {
-		logger.Errorf("init jaeger fail ")
-	} else {
-		logger.Errorf("init jaeger success ")
-	}
+	jaeger := tracing.SetupJaegerTracing("mt_node_manager")
 	defer func() {
 		if jaeger != nil {
 			jaeger.Flush()
@@ -84,8 +58,8 @@ func serve() error {
 	//init api server
 	strategy := new(services.Service)
 	strategy.Init(database.Db)
-	initHttpRouter(c, strategy)
 
+	initHttpRouter(c, strategy)
 	return nil
 }
 

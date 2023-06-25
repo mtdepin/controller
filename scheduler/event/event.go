@@ -5,7 +5,6 @@ const (
 	DELETE
 	CHARGE
 	SEARCHREP
-	DELETEFID
 )
 
 type Event struct {

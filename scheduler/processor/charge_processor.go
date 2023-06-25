@@ -53,7 +53,7 @@ func (p *ChargeProcessor) charge(request *param.ChargeRequest) (*param.ChargeRes
 		return nil, err
 	}
 
-	rsp, err1 := ctl.DoRequest(request.Ext.Ctx, http.MethodPost, nameServerURL, nil, bytes.NewReader(bt))
+	rsp, err1 := ctl.DoRequest(http.MethodPost, nameServerURL, nil, bytes.NewReader(bt))
 	if err1 != nil {
 		return nil, err1
 	}

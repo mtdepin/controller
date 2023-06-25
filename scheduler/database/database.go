@@ -12,8 +12,8 @@ type DataBase struct {
 
 var Db = &DataBase{}
 
-func InitDB(url, user, pwd, dbName string, timeout int) error {
-	session, err := mongo.CreateSession(url, user, pwd, dbName, timeout)
+func InitDB(url, dbName string, timeout int) error {
+	session, err := mongo.CreateSession(url, timeout)
 	if err != nil {
 		return err
 	}

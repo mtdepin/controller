@@ -21,7 +21,6 @@ type StateCtl struct {
 	orderCreate         *OrderCreate
 	orderUploadFinish   *OrderUploadFinish
 	orderDownloadFinish *OrderDownloadFinish
-	callbackDownload    *CallbackDownload
 }
 
 func (p *StateCtl) Init(orderIndex *index.OrderIndex, orderStateIndex *index.OrderStateIndex) {
@@ -33,9 +32,6 @@ func (p *StateCtl) Init(orderIndex *index.OrderIndex, orderStateIndex *index.Ord
 
 	p.callbackUpload = new(CallbackUpload)
 	p.callbackUpload.Init(orderIndex, orderStateIndex)
-
-	p.callbackDownload = new(CallbackDownload)
-	p.callbackDownload.Init(orderIndex, orderStateIndex)
 
 	p.orderCreate = new(OrderCreate)
 	p.orderCreate.Init(orderIndex, orderStateIndex)
@@ -71,8 +67,6 @@ func (p *StateCtl) plan(events []sm.Event, orderState *OrderState) (func(sm.Cont
 		orderState.Status = CHARGE_PROCEED
 	case e.TASK_DOWNLOAD_FINISH:
 		orderState.Status = DOWNLOAD_FINISH
-	case e.CALLBACK_DOWNLOAD:
-		orderState.Status = DOWNLOAD_PROCEED
 	}
 
 	switch orderState.Status {
@@ -88,8 +82,6 @@ func (p *StateCtl) plan(events []sm.Event, orderState *OrderState) (func(sm.Cont
 		return p.ChargeProceed, 1, nil
 	case DOWNLOAD_FINISH:
 		return p.DownloadFinish, 1, nil
-	case DOWNLOAD_PROCEED:
-		return p.DownloadProceed, 1, nil
 	default:
 		bt, _ := json.Marshal(orderState.Event)
 		logger.Errorf("statectl plan  error order status: %d, event: %v", orderState.Status, string(bt))
@@ -131,16 +123,6 @@ func (p *StateCtl) UploadFinish(ctx sm.Context, st OrderState) error {
 func (p *StateCtl) RepProceed(ctx sm.Context, st OrderState) error {
 	if err := p.CallbackReplicate.HandleCallbackRepEvent(st.Event); err != nil {
 		utils.Log(utils.WARN, "StateCtl HandleCallbackRepEvent", err.Error(), st.Event.Data)
-		st.Event.Ret <- FAIL
-		return nil
-	}
-	st.Event.Ret <- SUCCESS
-	return nil
-}
-
-func (p *StateCtl) DownloadProceed(ctx sm.Context, st OrderState) error {
-	if err := p.callbackDownload.HandleDownloadEvent(st.Event); err != nil {
-		utils.Log(utils.WARN, "StateCtl HandleDownloadEvent", err.Error(), st.Event.Data)
 		st.Event.Ret <- FAIL
 		return nil
 	}
@@ -190,8 +172,8 @@ func (p *StateCtl) GetAllUploadFinishOrderInfo() []*dict.UploadFinishOrder {
 	return p.orderStateIndex.GetAllUploadFinishOrderInfo()
 }
 
-func (p *StateCtl) GetBeginReplicateOrderInfo(orderId string) (*dict.UploadFinishOrder, error) {
-	return p.orderStateIndex.GetBeginReplicateOrderInfo(orderId)
+func (p *StateCtl) GetUploadFinishOrderInfo(orderId string) (*dict.UploadFinishOrder, error) {
+	return p.orderStateIndex.GetUploadFinishOrderInfo(orderId)
 }
 
 func (p *StateCtl) UpdateOrderRepInfo(orderId string, tasks map[string]*dict.TaskRepInfo) error {
@@ -218,10 +200,6 @@ func (p *StateCtl) GetAllOrders(status int) []*dict.OrderStateInfo {
 	return p.orderStateIndex.GetAllOrders(status)
 }
 
-func (p *StateCtl) GetAllOrderIds(status int) []string {
-	return p.orderStateIndex.GetAllOrderIds(status)
-}
-
 func (p *StateCtl) UpdateOrderStateInfo(orderId string, state *dict.OrderStateInfo) error {
 	return p.orderStateIndex.Update(orderId, state)
 }
@@ -232,20 +210,4 @@ func (p *StateCtl) GetOrder(orderId string, status int) (*dict.OrderStateInfo, e
 
 func (p *StateCtl) GetFidStatus(orderId, fid string) (int, error) {
 	return p.orderStateIndex.GetFidStatus(orderId, fid)
-}
-
-func (p *StateCtl) GetAllBeginRepOrderInfo() []*dict.UploadFinishOrder {
-	return p.orderStateIndex.GetAllBeginRepOrderInfo()
-}
-
-func (p *StateCtl) GetStateFromDB(orderId string) (*dict.OrderStateInfo, error) {
-	return p.orderStateIndex.GetStateFromDB(orderId)
-}
-
-func (p *StateCtl) AddPieceFid(orderId string, tasks []*dict.Task) error {
-	return p.orderStateIndex.AddPieceFid(orderId, tasks)
-}
-
-func (p *StateCtl) TaskInitFinish(orderId string) (bool, error) {
-	return p.orderStateIndex.TaskInitFinish(orderId)
 }

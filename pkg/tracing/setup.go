@@ -65,12 +65,11 @@ func jaegerOptsFromEnv(opts *jaeger.Options) bool {
 	return false
 }
 
-func SetupJaegerTracing(serviceName, url string) *jaeger.Exporter {
-	opts := jaeger.Options{AgentEndpoint: url}
-	logger.Infof("-------helo opts: ", opts)
-	/*if !jaegerOptsFromEnv(&opts) {
+func SetupJaegerTracing(serviceName string) *jaeger.Exporter {
+	opts := jaeger.Options{}
+	if !jaegerOptsFromEnv(&opts) {
 		return nil
-	}*/
+	}
 	opts.ServiceName = serviceName
 	je, err := jaeger.NewExporter(opts)
 	if err != nil {

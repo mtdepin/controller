@@ -2,32 +2,30 @@ package processor
 
 import (
 	"controller/pkg/logger"
-	"controller/task_tracker/database"
 	"controller/task_tracker/dict"
 	e "controller/task_tracker/event"
 	"controller/task_tracker/param"
 	"controller/task_tracker/statemachine"
 	"controller/task_tracker/utils"
+	"encoding/json"
 	"fmt"
-	"gopkg.in/mgo.v2/bson"
 	"time"
 )
 
 type CheckRepProcessor struct {
 	stateMachine           *statemachine.StateMachine
 	orderRepCheckEventChan chan *e.OrderRepCheckEvent
-	fidReplicate           *database.FidReplication
 	repOrderChan           chan string
 	chargeOrderChan        chan string
 	repChanSize            int //extend
 }
 
-func (p *CheckRepProcessor) Init(machine *statemachine.StateMachine, repOrderChan, chargeOrderChan chan string, fidReplicate *database.FidReplication) {
+func (p *CheckRepProcessor) Init(machine *statemachine.StateMachine, repOrderChan, chargeOrderChan chan string) {
 	p.stateMachine = machine
-	p.fidReplicate = fidReplicate
+
 	p.repOrderChan = repOrderChan
 	p.chargeOrderChan = chargeOrderChan
-	orders := p.stateMachine.GetAllBeginRepOrderInfo()
+	orders := p.stateMachine.GetAllUploadFinishOrderInfo()
 
 	p.repChanSize = len(orders) + EXTEND_SIZE
 	p.orderRepCheckEventChan = make(chan *e.OrderRepCheckEvent, p.repChanSize)
@@ -40,7 +38,7 @@ func (p *CheckRepProcessor) Init(machine *statemachine.StateMachine, repOrderCha
 }
 
 func (p *CheckRepProcessor) Add(orderId string) {
-	order, err := p.stateMachine.GetBeginReplicateOrderInfo(orderId)
+	order, err := p.stateMachine.GetUploadFinishOrderInfo(orderId)
 	if err != nil {
 		utils.Log(utils.WARN, "CheckRepProcessor Add ", err.Error(), nil)
 		return
@@ -66,24 +64,6 @@ func (p *CheckRepProcessor) Handle() {
 }
 
 func (p *CheckRepProcessor) SearchReplicate(event *e.OrderRepCheckEvent) {
-	//check 订单是否备份成功:
-	orderId := event.Request.OrderId
-	status, err := p.stateMachine.GetOrderStatus(orderId)
-	if err == nil && status == dict.TASK_REP_SUC { //如果订单备份成功，直接返回.
-		p.stateMachine.UpdateOrder(orderId, status)
-
-		p.UpdateFidRepStatus(orderId)
-
-		event := p.generateCallbackChargeEvent(orderId, param.FAIL)
-		p.stateMachine.Send(orderId, event)
-		ret := <-event.Ret
-
-		if ret != param.SUCCESS {
-			p.chargeOrderChan <- orderId //重新计费
-		}
-		return
-	}
-
 	rsp, err := utils.SearchRep(event.Request)
 	if err != nil { //查询失败，直接重新查询
 		p.addSearchEvent(event) //可能block, to do proc
@@ -93,10 +73,7 @@ func (p *CheckRepProcessor) SearchReplicate(event *e.OrderRepCheckEvent) {
 	//查询成功， 更新订单状态， 如果有任务备份失败，投放备份事件；  如果全部备份成功，投放计费事件。对于还没备份完成的任务，重新查询。
 	err = p.stateMachine.UpdateOrderRepInfo(rsp.OrderId, rsp.Tasks)
 	if err != nil {
-		utils.Log(utils.WARN, "CheckRepProcessor.SearchReplicate", err.Error(), rsp)
-		if _, err := p.stateMachine.GetOrderStatus(rsp.OrderId); err != nil {
-			return //订单不存在，则返回.
-		}
+		p.log("stateMachine.UpdateOrderRepInfo", rsp.OrderId, err.Error(), rsp.Tasks)
 		p.addSearchEvent(event) //重新查询
 		return
 	}
@@ -108,7 +85,7 @@ func (p *CheckRepProcessor) SearchReplicate(event *e.OrderRepCheckEvent) {
 		ret := <-event.Ret
 
 		if ret != param.SUCCESS {
-			utils.Log(utils.WARN, "CheckRepProcessor.SearchReplicate, stateMachine proc replicate", "fail", rsp)
+			p.log("stateMachine proc replicate", rsp.OrderId, "fail", event)
 		}
 	}
 
@@ -118,9 +95,6 @@ func (p *CheckRepProcessor) SearchReplicate(event *e.OrderRepCheckEvent) {
 		status, err := p.stateMachine.GetOrderStatus(rsp.OrderId)
 		if err == nil && status == dict.TASK_REP_SUC {
 			p.stateMachine.UpdateOrder(rsp.OrderId, status)
-			//to do set fid replicate success status.
-
-			p.UpdateFidRepStatus(rsp.OrderId)
 
 			event := p.generateCallbackChargeEvent(rsp.OrderId, param.FAIL)
 			p.stateMachine.Send(rsp.OrderId, event)
@@ -128,12 +102,13 @@ func (p *CheckRepProcessor) SearchReplicate(event *e.OrderRepCheckEvent) {
 
 			if ret != param.SUCCESS {
 				p.chargeOrderChan <- rsp.OrderId //重新计费
+				p.log("stateMachine proc charge event", rsp.OrderId, "fail", event)
 			}
 		} else { //重新查询.
 			if err == nil {
 				p.addSearchEvent(event) //获取订单状态失败，或者等你的没有备份成功，重新查询。
 			} else {
-				utils.Log(utils.ERROR, "CheckRepProcessor.SearchReplicate, stateMachine.GetOrderStatus fail", err.Error(), event)
+				p.log("stateMachine.GetOrderStatus ", rsp.OrderId, err.Error(), event)
 			}
 		}
 	}
@@ -183,12 +158,12 @@ func (p *CheckRepProcessor) addSearchEvent(event *e.OrderRepCheckEvent) {
 	if event.Count < dict.SEARCH_COUNT && diffTime < dict.Duration {
 		size := len(p.orderRepCheckEventChan)
 		if size >= p.repChanSize-1 {
-			utils.Log(utils.ERROR, "CheckRepProcessor addSearchEvent ", fmt.Sprintf(" add  orderRepCheckEventChan size = %v  have fill ", size), event.Request)
+			p.log("CheckRepProcessor addSearchEvent ", event.Request.OrderId, fmt.Sprintf(" add  orderRepCheckEventChan size = %v  have fill ", size), event.Request)
 		}
 
 		p.orderRepCheckEventChan <- event
 	} else {
-		utils.Log(utils.ERROR, "CheckRepProcessor addSearchEvent ", fmt.Sprintf("seach more than count: %d  or more than time: %d ", dict.SEARCH_COUNT, diffTime), event.Request)
+		p.log("CheckRepProcessor addSearchEvent ", event.Request.OrderId, fmt.Sprintf("seach more than count: %d  or more than time: %d ", dict.SEARCH_COUNT, diffTime), event.Request)
 	}
 }
 
@@ -202,7 +177,7 @@ func (p *CheckRepProcessor) generateRepCheckEvent(order *dict.UploadFinishOrder)
 	size := len(p.orderRepCheckEventChan)
 
 	if size >= p.repChanSize-1 {
-		utils.Log(utils.ERROR, "CheckRepProcessor, generateRepCheckEvent", fmt.Sprintf("add event to buffer, orderRepCheckEventChan buffer have fill, size= %v", size), order)
+		p.log("CheckRepProcessor, generateRepCheckEvent", order.OrderId, fmt.Sprintf("add event to buffer, orderRepCheckEventChan buffer have fill, size= %v", size), order)
 	}
 
 	p.orderRepCheckEventChan <- &e.OrderRepCheckEvent{
@@ -230,7 +205,7 @@ func (p *CheckRepProcessor) generateCallbackRepEvent(orderId, fid, cid, region s
 }
 
 func (p *CheckRepProcessor) generateCallbackChargeEvent(orderId string, status int) *e.Event {
-	callbackChargeEvent := &e.CallbackChargeEvent{
+	callbackDeleteEvent := &e.CallbackChargeEvent{
 		OrderId:   orderId,
 		OrderType: param.UPLOAD,
 		Status:    status,
@@ -240,7 +215,7 @@ func (p *CheckRepProcessor) generateCallbackChargeEvent(orderId string, status i
 		Type:    e.CALLBACK_CHARGE,
 		OrderId: orderId,
 		Ret:     make(chan int),
-		Data:    callbackChargeEvent,
+		Data:    callbackDeleteEvent,
 	}
 }
 
@@ -251,19 +226,79 @@ func (p *CheckRepProcessor) addOrder() {
 	}
 }
 
-func (p *CheckRepProcessor) UpdateFidRepStatus(orderId string) error {
-	state, err := p.stateMachine.GetOrderStateInfo(orderId)
-	if err != nil {
-		return err
-	}
+func (p *CheckRepProcessor) log(name, orderId, errInfo string, event interface{}) {
+	bt, _ := json.Marshal(event)
+	logger.Warnf("CheckRepProcessor %s  fail:%s, orderId: %s, event: %s", name, errInfo, string(bt))
+}
 
-	for _, task := range state.Tasks {
-		if task.Status == dict.TASK_REP_SUC {
-			if err := p.fidReplicate.Update(task.Fid, bson.M{"$set": bson.M{"status": task.Status}}); err != nil {
-				logger.Warnf("CheckRepProcessor UUpdateFidRepStatus fail order_id : %v, fid: %v, err: %v ", orderId, task.Fid, err.Error())
+/*func (p *CheckRepProcessor) addRepEvent() {
+	for true {
+		time.Sleep(TIME_INTERAL * time.Second)
+		//一次取n个,防止消息队列中事件太多，导致等待时间过长。
+		count := FACTOR * TIME_INTERAL
+		nLen := len(p.orderRepCheckEventBufChan)
+		if count > nLen {
+			count = nLen
+		}
+
+		for i := 0; i < count; i++ {
+			event := <-p.orderRepCheckEventBufChan
+			p.orderRepCheckEventChan <- event
+			time.Sleep(INTERNAL * time.Millisecond)
+		}
+	}
+}*/
+
+/*func (p *CheckRepProcessor) Handle() {
+	for true {
+		event := <-p.orderRepCheckEventChan
+		rsp, err := utils.SearchRep(event.Request)
+		if err != nil { //查询失败，直接重新查询
+			p.addSearchEvent(event) //可能block, to do proc
+			continue
+		}
+
+		//查询成功， 更新订单状态， 如果有任务备份失败，投放备份事件；  如果全部备份成功，投放计费事件。对于还没备份完成的任务，重新查询。
+		err = p.stateMachine.UpdateOrderRepInfo(rsp.OrderId, rsp.Tasks)
+		if err != nil {
+			p.log("stateMachine.UpdateOrderRepInfo", rsp.OrderId, err.Error(), rsp.Tasks)
+			//p.addSearchEvent(event) //重新查询
+			continue
+		}
+
+		//生成重新查询请求 及 重新备份事件。
+		request, events := p.generate(rsp.OrderId, rsp.Tasks)
+		for _, event := range events {
+			p.stateMachine.Send(rsp.OrderId, event)
+			ret := <-event.Ret
+
+			if ret != param.SUCCESS {
+				p.log("stateMachine proc replicate", rsp.OrderId, "fail", event)
+			}
+		}
+
+		if request != nil { //重新查询未备份完成的请求.
+			p.addSearchEvent(&e.OrderRepCheckEvent{Count: event.Count, Request: request}) //count 累加.
+		} else { //全部备份成功，生成计费事件.
+			status, err := p.stateMachine.GetOrderStatus(rsp.OrderId)
+			if err == nil && status == dict.TASK_REP_SUC {
+				p.stateMachine.UpdateOrder(rsp.OrderId, status)
+
+				event := p.generateCallbackChargeEvent(rsp.OrderId, param.FAIL)
+				p.stateMachine.Send(rsp.OrderId, event)
+				ret := <-event.Ret
+
+				if ret != param.SUCCESS {
+					p.chargeOrderChan <- rsp.OrderId //重新计费
+					p.log("stateMachine proc charge event", rsp.OrderId, "fail", event)
+				}
+			} else { //重新查询.
+				if err == nil {
+					p.addSearchEvent(event) //获取订单状态失败，或者等你的没有备份成功，重新查询。
+				} else {
+					p.log("stateMachine.GetOrderStatus ", rsp.OrderId, err.Error(), event)
+				}
 			}
 		}
 	}
-
-	return nil
-}
+}*/

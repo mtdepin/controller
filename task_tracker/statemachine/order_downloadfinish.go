@@ -5,6 +5,7 @@ import (
 	e "controller/task_tracker/event"
 	"controller/task_tracker/index"
 	"controller/task_tracker/param"
+	"controller/task_tracker/utils"
 )
 
 type OrderDownloadFinish struct {
@@ -35,8 +36,7 @@ func (p *OrderDownloadFinish) handleDownloadFinishSucEvent(event *e.OrderDownloa
 		return err
 	}
 
-	//收到rm文件下载完成通知，才计费.
-	/*request, err := p.generateChargeRequest(event.OrderId)
+	request, err := p.generateChargeRequest(event.OrderId)
 	if err != nil {
 		return err
 	}
@@ -44,8 +44,8 @@ func (p *OrderDownloadFinish) handleDownloadFinishSucEvent(event *e.OrderDownloa
 	if _, err := utils.Charge(request); err != nil {
 		return p.orderStateIndex.SetStatus(event.OrderId, dict.TASK_CHARGE_FAIL)
 	}
-	*/
-	return nil
+
+	return err
 }
 
 func (p *OrderDownloadFinish) handleDownloadFinishFailEvent(event *e.OrderDownloadFinishEvent) error {

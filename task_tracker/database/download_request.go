@@ -48,13 +48,3 @@ func (p *DownloadRequest) getDownloadRequst(requestId string) (*dict.DownloadReq
 
 	return &downloadRequestInfos[0], nil
 }
-
-func (p *DownloadRequest) Add(info *dict.DownloadRequestInfo) (err error) {
-	for i := 0; i < Count; i++ {
-		if _, err = p.db.DownloadRequest.Upsert(bson.M{"request_id": info.RequestId}, info); err == nil {
-			return
-		}
-		time.Sleep(time.Duration(TimeInternal) * time.Millisecond)
-	}
-	return
-}

@@ -20,5 +20,5 @@ func (p *Searcher) Search(request *param.SearchFileRequest) ([]byte, error) {
 		return nil, err
 	}
 
-	return ctl.DoRequest(request.Ext.Ctx, http.MethodGet, nameServerURL, nil, bytes.NewReader(bt))
+	return ctl.DoRequest(http.MethodGet, nameServerURL, nil, bytes.NewReader(bt))
 }

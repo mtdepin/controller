@@ -8,9 +8,8 @@ const (
 )
 
 const (
-	EXTEND_SIZE    = 1024 * 100 //10w
-	TIME_INTERAL   = 10
-	FACTOR         = 1
-	INTERNAL       = 100
-	FID_EVENT_SIZE = 300
+	EXTEND_SIZE  = 1024 * 100 //10w
+	TIME_INTERAL = 10
+	FACTOR       = 1
+	INTERNAL     = 100
 )

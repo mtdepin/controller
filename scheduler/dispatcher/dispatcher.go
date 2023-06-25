@@ -17,7 +17,6 @@ func (p *Dispatcher) Init(manager *manager.Manager) {
 	p.handers[e.CHARGE] = manager.GetHandler(e.CHARGE)
 	p.handers[e.DELETE] = manager.GetHandler(e.DELETE)
 	p.handers[e.SEARCHREP] = manager.GetHandler(e.SEARCHREP)
-	p.handers[e.DELETEFID] = manager.GetHandler(e.DELETEFID)
 
 	//go p.Dispatch()
 }
@@ -38,6 +37,17 @@ func (p *Dispatcher) AddSearchRepEvent(event *e.Event) {
 	p.handers[e.SEARCHREP](event)
 }
 
-func (p *Dispatcher) AddDeleteFidEvent(event *e.Event) {
-	p.handers[e.DELETEFID](event)
+/*func (p *Dispatcher) AddEvent(event *event.Event) {
+	p.pipeline <- event //p1, p2, p3
 }
+
+func (p *Dispatcher) Dispatch() {
+	for {
+		event := <-p.pipeline
+		if event.Type < len(p.handers) && p.handers[event.Type] != nil {
+			p.handers[event.Type](event)
+		} else {
+			logger.Warn("Dispatch, event type not exist  ", event.Type)
+		}
+	}
+}*/

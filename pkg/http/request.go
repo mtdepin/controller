@@ -2,15 +2,11 @@ package http
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
-	"go.opencensus.io/exporter/stackdriver/propagation"
-	"go.opencensus.io/trace"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -24,13 +20,12 @@ var HttpStateCode = map[int]bool{403: true, 408: true, 409: true}
 func DoRequestNew(method, url string, args map[string]string, bt []byte) (rsp []byte, err error) {
 	stateCode := 0
 	var body *bytes.Reader
-	ctx := context.Background()
 	for i := 0; i < COUNT; i++ {
 		if bt != nil {
 			body = bytes.NewReader(bt)
 		}
 
-		if rsp, stateCode, err = doRequest(ctx, method, url, args, body); err == nil {
+		if rsp, stateCode, err = doRequest(method, url, args, body); err == nil {
 			return
 		}
 
@@ -47,11 +42,11 @@ func DoRequestNew(method, url string, args map[string]string, bt []byte) (rsp []
 	return
 }
 
-func DoRequest(ctx context.Context, method, url string, args map[string]string, body io.Reader) (rsp []byte, err error) {
+func DoRequest(method, url string, args map[string]string, body io.Reader) (rsp []byte, err error) {
 	stateCode := 0
 
 	for i := 0; i < COUNT; i++ {
-		if rsp, stateCode, err = doRequest(ctx, method, url, args, body); err == nil {
+		if rsp, stateCode, err = doRequest(method, url, args, body); err == nil {
 			return
 		}
 
@@ -68,25 +63,11 @@ func DoRequest(ctx context.Context, method, url string, args map[string]string, 
 	return
 }
 
-func doRequest(ctx context.Context, method, url string, args map[string]string, body io.Reader) ([]byte, int, error) {
+func doRequest(method, url string, args map[string]string, body io.Reader) ([]byte, int, error) {
 	request, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, -1, errors.New(fmt.Sprintf(" http.NewRequest failed: %v", err.Error()))
 	}
-
-	name := "doRequest"
-	szPath := strings.Split(url, "/")
-	nLen := len(szPath)
-	if nLen > 0 {
-		name = szPath[nLen-1]
-	}
-
-	_, span := trace.StartSpan(ctx, name)
-	defer span.End()
-
-	f := &propagation.HTTPFormat{}
-	//request = request.WithContext(nctx)
-	f.SpanContextToRequest(span.SpanContext(), request)
 
 	if len(args) > 0 {
 		param := request.URL.Query()
@@ -111,7 +92,7 @@ func doRequest(ctx context.Context, method, url string, args map[string]string, 
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, resp.StatusCode, errors.New(fmt.Sprintf("doRequest fail, statuscode: %d, msg: %v,  url:%v", resp.StatusCode, string(result), url))
+		return nil, resp.StatusCode, errors.New(fmt.Sprintf("doRequest fail, statuscode: %d, msg: %v", resp.StatusCode, string(result)))
 	}
 
 	return result, resp.StatusCode, nil

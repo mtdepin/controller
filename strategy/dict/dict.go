@@ -5,37 +5,11 @@ const (
 	FAIL
 )
 
-const (
-	LOW = iota
-	MIDDLE
-	HIGH
-)
-
-//region type
-const (
-	NORMAL_REGION = 0
-	CENTER_REGION = 1
-)
+const MINREPTHRESHOLD = 1
 
 const (
-	LOW_REP_NUM  = 1 //2   //当前测试版本，设置备份数为1.
-	MID_REP_NUM  = 2 //3
-	HIGH_REP_NUM = 3 //4
-)
-
-const (
-	TASK_INIT = iota + 1
-	TASK_UPLOAD_SUC
-	TASK_BEGIN_REP
-	TASK_REP_SUC
-	TASK_DOWNLOAD_SUC
-	TASK_CHARGE_SUC
-	TASK_DEL_SUC
-	TASK_UPLOAD_FAIL
-	TASK_DOWNLOAD_FAIL
-	TASK_REP_FAIL
-	TASK_DEL_FAIL
-	TASK_CHARGE_FAIL
+	FIDREP_STATUS_INIT = iota + 0
+	FIDREP_STATUS_CIDVALID
 )
 
 type RepInfo struct {
@@ -91,34 +65,37 @@ type DomainInfo struct {
 	Id         uint64 `bson:"id,omitempty" json:"id"`
 	Region     string `bson:"region,omitempty" json:"region"`
 	Url        string `bson:"url,omitempty" json:"url"`
-	Level      int    `bson:"level,omitempty" json:"level,omitempty"` //0.普通集群, 1.中心集群.
-	Status     int    `bson:"status,omitempty" json:"status"`         //1. 有效， 2.删除
+	Status     int    `bson:"status,omitempty" json:"status"` //1. 有效， 2.删除
 	CreateTime int64  `bson:"create_time,omitempty" json:"create_time"`
 	UpdateTime int64  `bson:"update_time,omitempty" json:"update_time"`
 }
 
-type Rep struct {
-	Region     string  `bson:"region,omitempty" json:"region"`
-	RealRep    int     `bson:"real_rep,omitempty" json:"real_rep"`
-	MinRep     int     `bson:"min_rep,omitempty" json:"min_rep"`
-	MaxRep     int     `bson:"max_rep,omitempty" json:"max_rep"`
-	RealMinRep int     `bson:"real_min_rep,omitempty" json:"real_min_rep"`
-	RealMaxRep int     `bson:"real_max_rep,omitempty" json:"real_max_rep"`
-	Expire     uint64  `bson:"expire,omitempty" json:"expire"` //过期时间
-	Status     int     `bson:"status,omitempty" json:"status"`
-	Weight     float64 `bson:"weight,omitempty" json:"weight"`           //根据开始时间,下载请求并发量等参数设置预估权重,以减少备份次数，实现惰性备份，惰性删除。
-	Used       int     `bson:"used,omitempty" json:"used"`               //0:表示此记录未被删除，可以使用, 1: 表示此记录被占用不能删除
-	CreateTime int64   `bson:"create_time,omitempty" json:"create_time"` //开始时间, end time = begintime + expire
-	UpdateTime int64   `bson:"update_time,omitempty" json:"update_time"`
+type FidRepInfo struct {
+	Region       string `bson:"region,omitempty" json:"region"`
+	VirtualRep   int    `bson:"virtual_rep,omitempty" json:"virtual_rep"`
+	RealRep      int    `bson:"real_rep,omitempty" json:"real_rep"`
+	MinRep       int    `bson:"min_rep,omitempty" json:"min_rep"`
+	MaxRep       int    `bson:"max_rep,omitempty" json:"max_rep"`
+	Status       int    `bson:"status,omitempty" json:"status"`
+	MinThreshold int    `bson:"min_threshold,omitempty" json:"min_threshold"` // 最低阈值：删除备份时，最少保留数量
+	CreateTime   int64  `bson:"create_time,omitempty" json:"create_time"`
+	UpdateTime   int64  `bson:"update_time,omitempty" json:"update_time"`
 }
 
-type FidInfo struct { //min,max, 3,4.
-	Fid        string                     `bson:"fid,omitempty" json:"fid"`
-	Cid        string                     `bson:"cid,omitempty" json:"cid"`         //默认为空，非空有效.
-	Origins    string                     `bson:"origins,omitempty" json:"origins"` //文件上传节点
-	Region     string                     `bson:"region,omitempty" json:"region"`
-	Reps       map[string]map[string]*Rep `bson:"reps,omitempty" json:"reps"` //key:region, orderId, value:备份详情,
-	Status     int                        `bson:"status,omitempty" json:"status"`
-	CreateTime int64                      `bson:"create_time,omitempty" json:"create_time"`
-	UpdateTime int64                      `bson:"update_time,omitempty" json:"update_time"`
+type FidInfo struct {
+	Fid        string                 `bson:"fid,omitempty" json:"fid"`
+	Cid        string                 `bson:"cid,omitempty" json:"cid"`
+	Rep        map[string]*FidRepInfo `bson:"rep,omitempty" json:"rep"`       //key:region, value:备份详情
+	Status     int                    `bson:"status,omitempty" json:"status"` // 0: init   1: cid 有效
+	CreateTime int64                  `bson:"create_time,omitempty" json:"create_time"`
+	UpdateTime int64                  `bson:"update_time,omitempty" json:"update_time"`
 }
+
+//type FidInfo struct {
+//	Fid        string                         `bson:"fid,omitempty" json:"fid"`
+//	Cid        string                         `bson:"cid,omitempty" json:"cid"`
+//	Reps       map[string]map[string]*RepInfo `bson:"reps,omitempty" json:"reps"`     //key:orderId, region, value:备份详情,
+//	Status     int                            `bson:"status,omitempty" json:"status"` // 0: init   1: cid 有效
+//	CreateTime int64                          `bson:"create_time,omitempty" json:"create_time"`
+//	UpdateTime int64                          `bson:"update_time,omitempty" json:"update_time"`
+//}

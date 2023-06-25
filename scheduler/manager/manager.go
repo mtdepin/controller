@@ -14,7 +14,6 @@ type Manager struct {
 	deleteProcessor    *processor.DeleteProcessor
 	replicateProcessor *processor.ReplicateProcessor
 	searchRepProcessor *processor.SearchRepProcessor
-	deleteFidProcessor *processor.DeleteFidProcessor
 }
 
 func (p *Manager) Init(size, num int32, db *database.DataBase) {
@@ -38,9 +37,6 @@ func (p *Manager) Init(size, num int32, db *database.DataBase) {
 	p.searchRepProcessor = new(processor.SearchRepProcessor)
 	p.searchRepProcessor.Init(size, num, domainMap)
 
-	p.deleteFidProcessor = new(processor.DeleteFidProcessor)
-	p.deleteFidProcessor.Init(size, num, domainMap)
-
 }
 
 func (p *Manager) GetHandler(eventType int32) func(event *event.Event) {
@@ -53,8 +49,6 @@ func (p *Manager) GetHandler(eventType int32) func(event *event.Event) {
 		return p.chargeProcessor.AddEvent
 	case event.SEARCHREP:
 		return p.searchRepProcessor.AddEvent
-	case event.DELETEFID:
-		return p.deleteFidProcessor.AddEvent
 	default:
 		return nil
 	}

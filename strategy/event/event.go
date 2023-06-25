@@ -1,10 +1,12 @@
 package event
 
-import "controller/strategy/dict"
+const (
+	FIDREP_UPSERT = iota + 1
+	FIDREP_DELETE
+)
 
 type Event struct {
-	//Type  int //eventType
-	OrderId string
-	Data    *dict.Task
-	Ret     chan int
+	Type int32
+	Data interface{}
+	Ret  chan error
 }

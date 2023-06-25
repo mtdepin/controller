@@ -11,15 +11,28 @@ type DataBase struct {
 	mgoOrder   *mgo.Collection
 }
 
-func CreateSession(url, user, pwd, dbName string, timeout int) (*mgo.Session, error) {
+var mongoDb DataBase
+
+func ConnectMgoDB(url, dbName string, timeout int) error {
+	session, err := CreateSession(url, timeout)
+	if err != nil {
+		return err
+	}
+	if mongoDb.mgoSession != nil {
+		mongoDb.mgoSession.Close()
+	}
+	mongoDb.mgoSession = session
+	db := session.DB(dbName)
+	mongoDb.mgoOrder = db.C("order")
+	return nil
+}
+
+func CreateSession(url string, timeout int) (*mgo.Session, error) {
 	dial := &mgo.DialInfo{
 		Addrs:     strings.Split(url, ","),
 		Direct:    true,
 		Timeout:   time.Duration(timeout) * time.Second,
-		PoolLimit: 500,
-		//Username:  user,
-		//Password:  pwd,
-		Database: dbName,
+		PoolLimit: 100,
 	}
 
 	session, err := mgo.DialWithInfo(dial)

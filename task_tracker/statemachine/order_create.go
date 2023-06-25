@@ -1,7 +1,6 @@
 package statemachine
 
 import (
-	"controller/pkg/logger"
 	"controller/task_tracker/dict"
 	e "controller/task_tracker/event"
 	"controller/task_tracker/index"
@@ -24,7 +23,6 @@ func (p *OrderCreate) HandleCreateOrderEvent(event *e.Event) error {
 		OrderId:    event.OrderId,
 		RequestId:  createOrderEvent.RequestId,
 		OrderType:  createOrderEvent.OrderType,
-		PieceNum:   createOrderEvent.PieceNum,
 		Status:     dict.TASK_INIT,
 		CreateTime: time.Now().UnixMilli(),
 		UpdateTime: time.Now().UnixMilli(),
@@ -33,26 +31,24 @@ func (p *OrderCreate) HandleCreateOrderEvent(event *e.Event) error {
 	state := &dict.OrderStateInfo{
 		OrderId:    event.OrderId,
 		OrderType:  int32(createOrderEvent.OrderType),
-		PieceNum:   createOrderEvent.PieceNum,
-		Tasks:      make(map[string]*dict.Task, createOrderEvent.PieceNum),
 		Status:     dict.TASK_INIT,
 		CreateTime: time.Now().UnixMilli(),
 		UpdateTime: time.Now().UnixMilli(),
 	}
 
-	//上传请求初始化
-	/*for _, fid := range createOrderEvent.Fids {
-		state.Tasks[fid.Fid] = &dict.Task{Fid: fid.Fid, Cid: fid.Cid, Status: fid.Status, Repeate: fid.Repeate, Origins: fid.Origins}
-	}*/
+	state.Tasks = make(map[string]*dict.Task, 10)
 
-	//下载请求cids
+	for _, fid := range createOrderEvent.Fids {
+		state.Tasks[fid] = &dict.Task{Fid: fid}
+	}
+
 	for _, cid := range createOrderEvent.Cids {
-		state.Tasks[cid] = &dict.Task{Cid: cid, Status: dict.TASK_INIT}
+		state.Tasks[cid] = &dict.Task{Cid: cid}
 	}
 
 	if err := p.orderIndex.Update(order.RequestId, order.OrderId, order); err != nil {
 		return err
 	}
-	logger.Infof(" create_upload_order, order_id: %v, status: %v, update_time: %v", state.OrderId, state.Status, state.UpdateTime)
+
 	return p.orderStateIndex.Update(event.OrderId, state)
 }

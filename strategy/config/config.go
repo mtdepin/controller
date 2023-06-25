@@ -14,12 +14,10 @@ import (
 type ServerConfig struct {
 	Node     NodeConfig
 	Logger   config.LoggerConfig
-	Jaeger   config.JaegerConfig
+	Jeager   config.JaegerConfig
 	Request  config.RequestConfig
 	Strategy config.StrategyConfig
 	DB       db.DBconfig
-	Redis    config.RedisConfig
-	Lock     config.LockConfig
 }
 
 var ServerCfg *ServerConfig

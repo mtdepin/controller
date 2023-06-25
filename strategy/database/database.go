@@ -15,8 +15,8 @@ type DataBase struct {
 
 var Db = &DataBase{}
 
-func InitDB(url, user, pwd, dbName string, timeout int) error {
-	session, err := mongo.CreateSession(url, user, pwd, dbName, timeout)
+func InitDB(url, dbName string, timeout int) error {
+	session, err := mongo.CreateSession(url, timeout)
 	if err != nil {
 		return err
 	}
@@ -32,22 +32,5 @@ func InitDB(url, user, pwd, dbName string, timeout int) error {
 	Db.Domain = db.C(DomainCollection)
 	Db.FidReplication = db.C(FidReplicationCollection)
 
-	return createIndex(Db.RepStrategyCollection, "order_id")
-}
-
-func createIndex(collection *mgo.Collection, key string) error {
-	if indexs, err := collection.Indexes(); err == nil {
-		for i, _ := range indexs {
-			if indexs[i].Key[0] == key {
-				return nil
-			}
-		}
-	}
-
-	index := mgo.Index{
-		Key:    []string{key},
-		Unique: true,
-	}
-
-	return collection.EnsureIndex(index)
+	return nil
 }

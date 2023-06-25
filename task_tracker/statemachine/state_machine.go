@@ -7,7 +7,6 @@ import (
 	"controller/task_tracker/dict"
 	e "controller/task_tracker/event"
 	"controller/task_tracker/index"
-	"controller/task_tracker/watcher"
 	"encoding/json"
 	dss "github.com/ipfs/go-datastore/sync"
 
@@ -62,8 +61,8 @@ func (p *StateMachine) GetAllUploadFinishOrderInfo() []*dict.UploadFinishOrder {
 	return p.stateCtl.GetAllUploadFinishOrderInfo()
 }
 
-func (p *StateMachine) GetBeginReplicateOrderInfo(orderId string) (*dict.UploadFinishOrder, error) {
-	return p.stateCtl.GetBeginReplicateOrderInfo(orderId)
+func (p *StateMachine) GetUploadFinishOrderInfo(orderId string) (*dict.UploadFinishOrder, error) {
+	return p.stateCtl.GetUploadFinishOrderInfo(orderId)
 }
 
 func (p *StateMachine) UpdateOrderRepInfo(orderId string, tasks map[string]*dict.TaskRepInfo) error {
@@ -78,9 +77,6 @@ func (p *StateMachine) Delete(orderId string) error {
 	if err := p.stateCtl.DeleleOrder(orderId); err != nil {
 		return err
 	}
-
-	//删除前,设置订单状态到prometheus
-	watcher.GlobalTraceWatcher.Delete(orderId)
 	return p.stateGroup.StopStateMachine(context.Background(), datastore.NewKey(orderId))
 }
 
@@ -102,24 +98,4 @@ func (p *StateMachine) GetOrder(orderId string, status int) (*dict.OrderStateInf
 
 func (p *StateMachine) GetFidStatus(orderId, fid string) (int, error) {
 	return p.stateCtl.GetFidStatus(orderId, fid)
-}
-
-func (p *StateMachine) GetAllOrderIds(status int) []string {
-	return p.stateCtl.GetAllOrderIds(status)
-}
-
-func (p *StateMachine) GetAllBeginRepOrderInfo() []*dict.UploadFinishOrder {
-	return p.stateCtl.GetAllBeginRepOrderInfo()
-}
-
-func (p *StateMachine) GetStateFromDB(orderId string) (*dict.OrderStateInfo, error) {
-	return p.stateCtl.GetStateFromDB(orderId)
-}
-
-func (p *StateMachine) AddPieceFid(orderId string, tasks []*dict.Task) error {
-	return p.stateCtl.AddPieceFid(orderId, tasks)
-}
-
-func (p *StateMachine) TaskInitFinish(orderId string) (bool, error) {
-	return p.stateCtl.TaskInitFinish(orderId)
 }

@@ -40,9 +40,6 @@ func RegisterAPIRouter(router *mux.Router, ck *services.Service) {
 	apiRouter.Methods(http.MethodGet).Path("/getReplicateStrategy").HandlerFunc(
 		maxClients(gz(api.HttpTraceAll(apiHandlers.GetReplicateStrategy))))
 
-	apiRouter.Methods(http.MethodGet).Path("/getOrderDeleteStrategy").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.GetOrderDeleteStrategy))))
-
-	apiRouter.Methods(http.MethodGet).Path("/getFidDeleteStrategy").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.GetFidDeleteStrategy))))
+	apiRouter.Methods(http.MethodGet).Path("/getDeleteReplicateStrategy").HandlerFunc( // 上传文件失败，获取删除策略
+		maxClients(gz(api.HttpTraceAll(apiHandlers.GetDeleteReplicateStrategy))))
 }

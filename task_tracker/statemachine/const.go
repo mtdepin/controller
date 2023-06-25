@@ -11,10 +11,9 @@ const (
 	UPLOAD_FINISH  //上传完成
 	REP_PROCEED    //备份进行中
 	//DELETE_PROCEED  //删除进行中
-	REP_FINISH       //备份完成
-	CHARGE_PROCEED   //计费完成
-	DOWNLOAD_FINISH  //下载完成
-	DOWNLOAD_PROCEED //
+	REP_FINISH      //备份完成
+	CHARGE_PROCEED  //计费完成
+	DOWNLOAD_FINISH //下载完成
 )
 
 type OrderState struct {

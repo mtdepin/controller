@@ -117,7 +117,7 @@ func getLevel(level string) zapcore.Level {
 
 func SendDingTalkMsg(logLevel zapcore.Level, msgType int32, template string, args ...interface{}) {
 	if ding != nil {
-		ding.PushMsgEventQueue(logLevel, msgType, template, args...)
+		ding.PushMsgEventQueue(logLevel, msgType, template, args)
 	}
 }
 
@@ -151,7 +151,7 @@ func Error(args ...interface{}) {
 }
 
 func Errorf(template string, args ...interface{}) {
-	defer SendDingTalkMsg(zap.ErrorLevel, montior.TEXT, template, args...)
+	defer SendDingTalkMsg(zap.ErrorLevel, montior.TEXT, template, args)
 	logger.Errorf(template, args...)
 }
 

@@ -83,7 +83,7 @@ func (p *DingTalk) PushMsgEventQueue(logLevel zapcore.Level, msgType int32, temp
 	switch msgType {
 	case TEXT:
 		request.Msgtype = "text"
-		request.Text = Text{Content: p.buildMsgContent(p.getLevel(logLevel), template, args...)}
+		request.Text = Text{Content: p.buildMsgContent(p.getLevel(logLevel), template, args)}
 	case LINK:
 		return
 	case MARKDOWN:
@@ -143,7 +143,7 @@ func (p *DingTalk) SendMessage(e *Event) {
 	}
 }
 
-func (p *DingTalk) buildLogContent(template string, fmtArgs ...interface{}) string {
+func (p *DingTalk) buildLogContent(template string, fmtArgs []interface{}) string {
 	if len(fmtArgs) == 0 {
 		return template
 	}
@@ -152,15 +152,20 @@ func (p *DingTalk) buildLogContent(template string, fmtArgs ...interface{}) stri
 		return fmt.Sprintf(template, fmtArgs...)
 	}
 
+	if len(fmtArgs) == 1 {
+		if str, ok := fmtArgs[0].(string); ok {
+			return str
+		}
+	}
 	return fmt.Sprint(fmtArgs...)
 }
 
-func (p *DingTalk) buildMsgContent(logLevel, template string, fmtArgs ...interface{}) string {
+func (p *DingTalk) buildMsgContent(logLevel, template string, fmtArgs []interface{}) string {
 	content := orderedmap.New()
 	content.Set("发生时间", time.Now().Format("2006-01-02 15:04:05"))
 	content.Set("日志等级", logLevel)
 	content.Set("服务名称", p.ServiceName)
-	content.Set("日志内容", p.buildLogContent(template, fmtArgs...))
+	content.Set("日志内容", p.buildLogContent(template, fmtArgs))
 
 	ret := ""
 	keys := content.Keys()

@@ -14,7 +14,7 @@ import (
 type ServerConfig struct {
 	Node    NodeConfig
 	Logger  config.LoggerConfig
-	Jaeger  config.JaegerConfig
+	Jeager  config.JaegerConfig
 	Request config.RequestConfig
 	DB      db.DBconfig
 }

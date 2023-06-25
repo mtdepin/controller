@@ -1,7 +1,5 @@
 package param
 
-import "golang.org/x/net/context"
-
 const (
 	FAIL    = 0
 	SUCCESS = 1
@@ -45,7 +43,6 @@ type ReplicationRequest struct {
 	OrderId string           `json:"order_id"`
 	Origins string           `json:"origins"`
 	Tasks   map[string]*Task `json:"tasks"` //key fid
-	Ext     *Extend          `json:"ext,omitempty"`
 }
 
 type ReplicationResponse struct {
@@ -65,7 +62,6 @@ type TaskReplicateRequest struct {
 	Encryption int               `json:"encryption"`
 	NasList    []string          `json:"nas_list,omitempty"`
 	Meta       map[string]string `json:"meta,omitempty"`
-	Ext        *Extend           `json:"ext,omitempty"`
 }
 
 type TaskReplicateResponse struct {
@@ -75,7 +71,6 @@ type TaskReplicateResponse struct {
 type DeleteOrderRequest struct {
 	OrderId string                 `json:"order_id"`
 	Tasks   map[string]*UploadTask `json:"tasks"`
-	Ext     *Extend                `json:"ext,omitempty"`
 }
 
 type DeleteOrderResponse struct {
@@ -88,7 +83,6 @@ type ChargeRequest struct {
 	OrderId   string  `json:"order_id"`
 	OrderType int32   `json:"order_type"`
 	Tasks     []*Task `json:"tasks"`
-	Ext       *Extend `json:"ext,omitempty"`
 }
 
 type ChargeResponse struct {
@@ -96,10 +90,9 @@ type ChargeResponse struct {
 }
 
 type DeleteRequest struct {
-	OrderId string  `json:"order_id"`
-	Origins string  `json:"origins"`
-	Cid     string  `json:"cid"`
-	Ext     *Extend `json:"ext,omitempty"`
+	OrderId string `json:"order_id"`
+	Origins string `json:"origins"`
+	Cid     string `json:"cid"`
 }
 
 type DeleteResponse struct {
@@ -156,22 +149,4 @@ type RepTask struct {
 type UploadFinishOrder struct {
 	OrderId string     `json:"order_id"`
 	Tasks   []*RepTask `json:"tasks"`
-}
-
-//调度请求
-type DeleteOrderFidRequest struct {
-	OrderId string                   `json:"order_id"`
-	Tasks   map[string][]*UploadTask `json:"tasks"` //key fid
-	Ext     *Extend                  `json:"ext,omitempty"`
-}
-
-//调度响应.
-type DeleteOrderFidResponse struct {
-	Status  int                       `json:"status"`
-	OrderId string                    `json:"order_id"`
-	Tasks   map[string]*[]*UploadTask `json:"tasks"` //key fid
-}
-
-type Extend struct {
-	Ctx context.Context `json:"ctx,omitempty"`
 }

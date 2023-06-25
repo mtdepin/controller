@@ -5,7 +5,6 @@ const (
 	TaskInfoCollection        = "task_info"
 	DomainCollection          = "domain_info"
 	DownloadRequestCollection = "download_request_info"
-	FidReplicationCollection  = "fid_replication"
 )
 
 const (

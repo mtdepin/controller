@@ -12,18 +12,16 @@ import (
 )
 
 type ServerConfig struct {
-	Node         NodeConfig
-	Logger       config.LoggerConfig
-	Jaeger       config.JaegerConfig
-	Request      config.RequestConfig
-	Searcher     config.SearcherConfig
-	Strategy     config.StrategyConfig
-	TaskTracker  config.TaskTrackerConfig
-	Account      config.AccountConfig
-	User         config.UserConfig
-	Prometheus   config.PrometheusConfig
-	SuperCluster config.SuperClusterConfig
-	DB           db.DBconfig
+	Node        NodeConfig
+	Logger      config.LoggerConfig
+	Jeager      config.JaegerConfig
+	Request     config.RequestConfig
+	Searcher    config.SearcherConfig
+	Strategy    config.StrategyConfig
+	TaskTracker config.TaskTrackerConfig
+	Account     config.AccountConfig
+	User        config.UserConfig
+	DB          db.DBconfig
 }
 
 var ServerCfg *ServerConfig

@@ -48,13 +48,3 @@ func (p *UploadRequest) getOrgRequest(requestId string) (*dict.UploadRequestInfo
 
 	return &uploadRequestInfos[0], nil
 }
-
-func (p *UploadRequest) Add(info *dict.UploadRequestInfo) (err error) {
-	for i := 0; i < Count; i++ {
-		if _, err = p.db.OrgRequest.Upsert(bson.M{"request_id": info.RequestId}, info); err == nil {
-			return
-		}
-		time.Sleep(time.Duration(TimeInternal) * time.Millisecond)
-	}
-	return
-}

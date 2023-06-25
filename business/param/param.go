@@ -1,9 +1,6 @@
 package param
 
-import (
-	"context"
-	"controller/business/dict"
-)
+import "controller/business/dict"
 
 const (
 	FAIL        = 0
@@ -22,9 +19,8 @@ const (
 )
 
 type SearchFileRequest struct {
-	FileName string  `json:"file_name"`
-	OrderId  string  `json:"order_id"`
-	Ext      *Extend `json:"ext,omitempty"`
+	FileName string `json:"file_name"`
+	OrderId  string `json:"order_id"`
 }
 
 type SearchFileResponse struct {
@@ -32,15 +28,28 @@ type SearchFileResponse struct {
 	Datas  []*dict.TaskInfo `json:"datas"`
 }
 
-type Extend struct {
-	Ctx context.Context `json:"ctx,omitempty"`
+type UploadTaskRequest struct {
+	RequestId  string             `json:"request_id"`
+	UserId     string             `json:"user_id"`
+	UploadType int                `json:"upload_type"`
+	Tasks      []*dict.UploadTask `json:"tasks"`
+	Group      string             `json:"group"`
+	NasList    []string           `json:"nas_list,omitempty"`
+}
+
+type OrderTaskResponse struct {
+	OrderId string `json:"order_id"`
+	Status  int    `json:"status"`
+}
+
+type NodeListRequst struct {
+	Group string `json:"group"`
+	Tag   string `json:"tag"`
 }
 
 type CreateStrategyRequest struct {
-	RequestId string  `json:"request_id"`
-	OrderId   string  `json:"order_id"`
-	Region    string  `json:"region"`
-	Ext       *Extend `json:"ext,omitempty"`
+	RequestId string `json:"request_id"`
+	OrderId   string `json:"order_id"`
 }
 
 type CreateStrategyResponse struct {
@@ -48,10 +57,35 @@ type CreateStrategyResponse struct {
 }
 
 type UploadTaskResponse struct {
-	Status   int          `json:"status"`
-	OrderId  string       `json:"order_id"`
-	NodeList []*dict.Node `json:"node_list"`
+	Status   int      `json:"status"`
+	OrderId  string   `json:"order_id"`
+	NodeList []string `json:"node_list"`
 }
+
+type CheckBalanceRequest struct {
+	UserId string `json:"user_id"`
+}
+
+type CheckBalanceResponse struct {
+	Status int  `json:"status"`
+	Enough bool `json:"enough"`
+}
+
+type NodeListResponse struct {
+	Knodes []string `json:"knodes"`
+	Status int      `json:"status"`
+}
+
+type CreateTaskRequest struct {
+	RequestId string `json:"request_id"`
+	Type      int    `json:"task_type"`
+}
+
+/*type UploadFinishRequest struct {
+	OrderId string            `json:"order_id"`
+	Files   map[string]string `json:"files"`
+	Status  int               `json:"status"`
+}*/
 
 type UploadTask struct {
 	Fid     string `json:"fid"`
@@ -65,7 +99,6 @@ type UploadFinishRequest struct {
 	OrderId string        `json:"order_id"`
 	Tasks   []*UploadTask `json:"tasks"`
 	Status  int           `json:"status"`
-	Ext     *Extend       `json:"ext,omitempty"`
 }
 
 type UploadFinishResponse struct {
@@ -79,20 +112,18 @@ type DownloadTaskRequest struct {
 	Group        string               `json:"group"`
 	DownloadType int                  `json:"download_type"`
 	Tasks        []*dict.DownloadTask `json:"tasks"`
-	Ext          *Extend              `json:"ext,omitempty"`
 }
 
 type DownloadTaskResponse struct {
-	OrderId string                  `json:"order_id"`
-	Nodes   map[string][]*dict.Node `json:"nodes"` //下载文件地址
-	Status  int                     `json:"status"`
+	OrderId string             `json:"order_id"`
+	Nodes   map[string][]*Node `json:"nodes"` //下载文件地址
+	Status  int                `json:"status"`
 }
 
 type DownloadFinishRequest struct {
 	OrderId string         `json:"order_id"`
 	Tasks   map[string]int `json:"tasks"` //key cid, value, status.
 	Status  int            `json:"status"`
-	Ext     *Extend        `json:"ext,omitempty"`
 }
 
 type DownloadFinishResponse struct {
@@ -100,18 +131,22 @@ type DownloadFinishResponse struct {
 	Status  int    `json:"status"`
 }
 
+type Node struct {
+	Address string `json:"Address"`
+	Weight  int    `json:"Weight"`
+}
+
 type CidNodes struct {
-	Nodes map[string][]*dict.Node //key: cid , value nodes
+	Nodes map[string][]*Node //key: cid , value nodes
 }
 
 type GetDownloadNodeResponse struct {
-	Data   map[string][]*dict.Node `json:"Data"`
-	Status int                     `json:"Status"`
+	Data   map[string][]*Node `json:"Data"`
+	Status int                `json:"Status"`
 }
 
 type UserInfoRequest struct {
-	UserId string  `json:"user_id"`
-	Ext    *Extend `json:"ext,omitempty"`
+	UserId string `json:"user_id"`
 }
 
 type UserInfoResponse struct {
@@ -123,19 +158,4 @@ type UserInfoResponse struct {
 	Secret   string `json:"secret"`
 	Pris     []int  `json:"pris"`
 	Status   int    `json:"status"`
-}
-
-//orderId, fid.
-type DeleteFidRequest struct {
-	RequestId string          `json:"request_id"`
-	UserId    string          `json:"user_id"`
-	OrderId   string          `json:"order_id"`
-	Fids      map[string]bool `json:"fids"`
-	Ext       *Extend         `json:"ext,omitempty"`
-}
-
-type DeleteFidResponse struct {
-	OrderId string         `json:"order_id"`
-	Fids    map[string]int `json:"fids"` //每个fid的删除状态
-	Status  int            `json:"status"`
 }

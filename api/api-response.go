@@ -405,8 +405,6 @@ func ParseParam(w http.ResponseWriter, r *http.Request, event interface{}) error
 		return err
 	}
 
-	//ParseContext(r, event)
-
 	logger.Infof("url:%v, request: %v ", r.RequestURI, string(jsonBytes))
 
 	return nil

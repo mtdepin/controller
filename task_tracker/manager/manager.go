@@ -1,9 +1,7 @@
 package manager
 
 import (
-	"controller/api"
 	"controller/pkg/cache"
-	"controller/pkg/logger"
 	"controller/task_tracker/database"
 	"controller/task_tracker/dict"
 	"controller/task_tracker/index"
@@ -11,35 +9,26 @@ import (
 	"controller/task_tracker/processor"
 	"controller/task_tracker/statemachine"
 	"controller/task_tracker/utils"
-	"controller/task_tracker/watcher"
-	"time"
 )
 
 type Manager struct {
-	orderIndex                *index.OrderIndex
-	orderStateIndex           *index.OrderStateIndex
-	fidReplicate              *database.FidReplication
-	stateMachine              *statemachine.StateMachine
-	orderProcessor            *processor.OrderProcessor
-	callbackUploadProcessor   *processor.CallbackUploadProcessor
-	callbackDownloadProcessor *processor.CallbackDownloadProcessor
-	callbackRepProcessor      *processor.CallbackRepProcessor
-	callbackChargeProcessor   *processor.CallbackChargeProcessor
-	checkRepProcessor         *processor.CheckRepProcessor
-	replicateProcessor        *processor.ReplicateProcessor
-	deleteProcessor           *processor.DeleteProcessor
-	chargeProcessor           *processor.ChargeProcessor
-	searchProcessor           *processor.SearchProcessor
-	pieceFidProcessor         *processor.PieceFidProcessor
-	repOrderChan              chan string
-	chargeOrderChan           chan string
-	orderCache                *cache.Cache
+	orderIndex              *index.OrderIndex
+	orderStateIndex         *index.OrderStateIndex
+	stateMachine            *statemachine.StateMachine
+	orderProcessor          *processor.OrderProcessor
+	callbackUploadProcessor *processor.CallbackUploadProcessor
+	callbackRepProcessor    *processor.CallbackRepProcessor
+	callbackChargeProcessor *processor.CallbackChargeProcessor
+	checkRepProcessor       *processor.CheckRepProcessor
+	replicateProcessor      *processor.ReplicateProcessor
+	deleteProcessor         *processor.DeleteProcessor
+	chargeProcessor         *processor.ChargeProcessor
+	repOrderChan            chan string
+	chargeOrderChan         chan string
+	orderCache              *cache.Cache
 }
 
 func (p *Manager) Init(db *database.DataBase) {
-	p.fidReplicate = new(database.FidReplication)
-	p.fidReplicate.Init(db)
-
 	p.repOrderChan = make(chan string, param.CHANAL_SIZE)
 	p.chargeOrderChan = make(chan string, param.CHARGE_CHANAL_SIZE)
 
@@ -53,19 +42,19 @@ func (p *Manager) Init(db *database.DataBase) {
 	p.stateMachine.Init(p.orderIndex, p.orderStateIndex)
 
 	p.orderProcessor = new(processor.OrderProcessor)
-	p.orderProcessor.Init(db, p.stateMachine, p.fidReplicate)
+	p.orderProcessor.Init(db, p.stateMachine)
 
 	p.callbackUploadProcessor = new(processor.CallbackUploadProcessor)
-	p.callbackUploadProcessor.Init(p.stateMachine, p.fidReplicate)
+	p.callbackUploadProcessor.Init(p.stateMachine)
 
-	p.callbackDownloadProcessor = new(processor.CallbackDownloadProcessor)
-	p.callbackDownloadProcessor.Init(p.stateMachine, p.fidReplicate)
+	p.callbackRepProcessor = new(processor.CallbackRepProcessor)
+	p.callbackRepProcessor.Init(p.stateMachine)
 
 	p.callbackChargeProcessor = new(processor.CallbackChargeProcessor)
 	p.callbackChargeProcessor.Init(p.stateMachine)
 
 	p.checkRepProcessor = new(processor.CheckRepProcessor)
-	p.checkRepProcessor.Init(p.stateMachine, p.repOrderChan, p.chargeOrderChan, p.fidReplicate)
+	p.checkRepProcessor.Init(p.stateMachine, p.repOrderChan, p.chargeOrderChan)
 
 	p.replicateProcessor = new(processor.ReplicateProcessor)
 	p.replicateProcessor.Init(p.stateMachine, p.repOrderChan)
@@ -73,40 +62,23 @@ func (p *Manager) Init(db *database.DataBase) {
 	p.deleteProcessor = new(processor.DeleteProcessor)
 	p.deleteProcessor.Init(p.stateMachine)
 
-	p.callbackRepProcessor = new(processor.CallbackRepProcessor)
-	p.callbackRepProcessor.Init(p.stateMachine)
-
 	p.chargeProcessor = new(processor.ChargeProcessor)
 	p.chargeProcessor.Init(p.stateMachine, p.chargeOrderChan)
 
-	p.searchProcessor = new(processor.SearchProcessor)
-	p.searchProcessor.Init(p.stateMachine, db)
-
-	p.pieceFidProcessor = new(processor.PieceFidProcessor)
-	p.pieceFidProcessor.Init(db, p.stateMachine, p.fidReplicate)
-
 	p.orderCache = new(cache.Cache)
 	p.orderCache.InitCache(param.ORDER_CACHE_SIZE)
-
-	//init watcher.
-	//watcher.GlobalWatcher.Init(p.orderStateIndex)
-	watcher.GlobalTraceWatcher.Init(1024)
 }
 
-func (p *Manager) CreateTask(request *api.CreateTaskRequest) (interface{}, error) {
+func (p *Manager) CreateTask(request *param.CreateTaskRequest) (interface{}, error) {
 	return p.orderProcessor.CreateOrderTask(request)
 }
 
 func (p *Manager) UploadFinish(request *param.UploadFinishRequest) (interface{}, error) {
-	t1 := time.Now().UnixMilli()
 	ret, err := p.orderProcessor.UploadFinish(request)
 
-	t2 := time.Now().UnixMilli()
 	status, er := p.stateMachine.GetOrderStatus(request.OrderId)
 	if er != nil {
 		utils.Log(utils.WARN, "Manager UploadFinish stateMachine.GetOrderStatus", er.Error(), request)
-		logger.Infof("CreateTask orderId: %v UploadFinish: total_costtime: %v ms, orderProcessor.UploadFinish: %v ms, err: %v", request.OrderId, t2-t1, er.Error())
-
 		return ret, err
 	}
 
@@ -114,26 +86,27 @@ func (p *Manager) UploadFinish(request *param.UploadFinishRequest) (interface{},
 		p.deleteProcessor.Add(request.OrderId)
 	}
 
-	t3 := time.Now().UnixMilli()
+	/*if err == nil && request.Status == param.SUCCESS {
+		status, er := p.stateMachine.GetOrderStatus(request.OrderId)
+		if er != nil {
+			utils.Log(utils.WARN, "Manager UploadFinish stateMachine.GetOrderStatus", er.Error(), request)
+			return ret, err
+		}
 
-	if status == dict.TASK_REP_FAIL { //如果都是重复订单，则添加到备份处理器中。
-		p.replicateProcessor.Add(request.OrderId)
-	}
+		if status == dict.TASK_UPLOAD_SUC { //查询
+			p.checkRepProcessor.Add(request.OrderId)
+		}
 
-	t4 := time.Now().UnixMilli()
+		if status == dict.TASK_REP_FAIL { //备份
+			p.replicateProcessor.Add(request.OrderId)
+		}
+	}*/
 
-	if status == dict.TASK_BEGIN_REP { //如果都是重复订单，开发备份了，则进行查询。
-		p.checkRepProcessor.Add(request.OrderId)
-	}
-
-	t5 := time.Now().UnixMilli()
-
-	logger.Infof("CreateTask orderId: %v UploadFinish: total_costtime: %v ms, orderProcessor.UploadFinish: %v, deleteProcessor.Add: %v, p.replicateProcessor.Add: %v, checkRepProcessor.Add: %v,", request.OrderId, t5-t1, t2-t1, t3-t2, t4-t3, t5-t4)
 	return ret, err
 }
 
 func (p *Manager) CallbackUpload(request *param.CallbackUploadRequest) (interface{}, error) {
-	//幂等， 如果订单cid 已经处理了，直接返回,通过订单fid 的状态判断，做幂等。
+	//幂等， 如果订单cid 已经处理了，直接返回,通过订单fid 的状态判读，做幂等。
 	/*key := request.OrderId + request.Cid
 	if p.orderCache.Search(key) { //存在，则返回.
 		utils.Log(utils.WARN, "Manager callbackUpload order cid hava process finish,  request repeate filt", "", request)
@@ -154,14 +127,13 @@ func (p *Manager) CallbackUpload(request *param.CallbackUploadRequest) (interfac
 			return ret, err
 		}
 
-		if status == dict.TASK_BEGIN_REP { //查询 开始备份的订单
+		if status == dict.TASK_UPLOAD_SUC { //查询
 			p.checkRepProcessor.Add(request.OrderId)
 		}
 
 		if status == dict.TASK_REP_FAIL { //备份
 			p.replicateProcessor.Add(request.OrderId)
 		}
-
 	}
 
 	return ret, err
@@ -198,33 +170,4 @@ func (p *Manager) CallbackCharge(request *param.CallbackChargeRequest) (interfac
 
 func (p *Manager) DownloadFinish(request *param.DownloadFinishRequest) (interface{}, error) {
 	return p.orderProcessor.DownloadFinish(request)
-}
-
-//根据备份策略，删除订单，删除订单中cid.
-func (p *Manager) DeleteFid(request *param.DeleteFidRequest) (interface{}, error) {
-	return p.orderProcessor.DeleteFid(request)
-}
-
-func (p *Manager) CallbackDownload(request *param.CallbackDownloadRequest) (interface{}, error) {
-	return p.callbackDownloadProcessor.Process(request)
-}
-
-func (p *Manager) GetOrderDetail(request *param.SearchOrderRequest) (interface{}, error) {
-	return p.searchProcessor.GetOrderDetail(request)
-}
-
-func (p *Manager) GetPageOrders(request *param.OrderPageQueryRequest) (interface{}, error) {
-	return p.searchProcessor.GetPageOrders(request)
-}
-
-func (p *Manager) GetFidDetail(request *param.SearchFidRequest) (interface{}, error) {
-	return p.searchProcessor.GetFidDetail(request)
-}
-
-func (p *Manager) GetPageFids(request *param.FidPageQueryRequest) (interface{}, error) {
-	return p.searchProcessor.GetPageFids(request)
-}
-
-func (p *Manager) UploadPieceFid(request *api.UploadPieceFidRequest) (interface{}, error) {
-	return p.pieceFidProcessor.UploadPieceFid(request)
 }

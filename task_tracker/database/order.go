@@ -29,7 +29,7 @@ func (p *Order) Add(info *dict.OrderInfo) (err error) {
 func (p *Order) Load() (ret *[]dict.OrderInfo, err error) {
 	for i := 0; i < Count; i++ {
 		//bson.M{"status": bson.M{"$in": []int{dict.TASK_INIT, dict.TASK_UPLOAD_SUC, dict.TASK_DOWNLOAD_SUC, dict.TASK_REP_SUC, dict.TASK_REP_FAIL, dict.TASK_DEL_FAIL, dict.TASK_CHARGE_FAIL}}}
-		if ret, err = p.getOrderInfo(bson.M{"status": bson.M{"$in": []int{dict.TASK_INIT, dict.TASK_UPLOAD_SUC, dict.TASK_DOWNLOAD_SUC, dict.TASK_REP_SUC, dict.TASK_BEGIN_REP, dict.TASK_REP_FAIL, dict.TASK_DEL_FAIL, dict.TASK_CHARGE_FAIL}}}); err == nil {
+		if ret, err = p.getOrderInfo(bson.M{"status": bson.M{"$in": []int{dict.TASK_INIT, dict.TASK_UPLOAD_SUC, dict.TASK_DOWNLOAD_SUC, dict.TASK_REP_SUC, dict.TASK_REP_FAIL, dict.TASK_DEL_FAIL, dict.TASK_CHARGE_FAIL}}}); err == nil {
 			return
 		}
 		time.Sleep(time.Duration(TimeInternal) * time.Millisecond)
@@ -98,14 +98,4 @@ func (p *Order) getOrderInfo(query interface{}) (*[]dict.OrderInfo, error) {
 	}
 
 	return &orderInfo, nil
-}
-
-func (p *Order) LoadOrderByStatus(status int) (ret *[]dict.OrderInfo, err error) {
-	for i := 0; i < Count; i++ {
-		if ret, err = p.getOrderInfo(bson.M{"status": status}); err == nil {
-			return
-		}
-		time.Sleep(time.Duration(TimeInternal) * time.Millisecond)
-	}
-	return
 }

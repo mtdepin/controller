@@ -1,14 +1,12 @@
 package api
 
 import (
-	"context"
 	"controller/pkg/logger"
 	utilruntime "controller/pkg/runtime"
 	"encoding/json"
 	"go.opencensus.io/exporter/stackdriver/propagation"
 	"go.opencensus.io/trace"
 	"net/http"
-	"strings"
 )
 
 const (
@@ -21,16 +19,9 @@ func HttpTraceAll(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer utilruntime.HandleCrash()
 		format := &propagation.HTTPFormat{}
-
-		name := "HttpTraceAll"
-		szDir := strings.Split(r.URL.Path, "/")
-		if len(szDir) > 0 {
-			name = szDir[len(szDir)-1]
-		}
-
 		sc, ok := format.SpanContextFromRequest(r)
 		if ok {
-			ctx, span := trace.StartSpanWithRemoteParent(r.Context(), name, sc)
+			ctx, span := trace.StartSpanWithRemoteParent(r.Context(), "HttpTraceAll", sc)
 			span.AddAttributes(trace.StringAttribute("Host", r.Host))
 			vars := r.URL.Query()
 			args, _ := json.Marshal(vars)
@@ -47,17 +38,7 @@ func HttpTraceAll(f http.HandlerFunc) http.HandlerFunc {
 			//}
 			logger.Debug()
 			defer span.End()
-
 			r = r.WithContext(ctx)
-
-			//logger.Infof("-----------------helo HttpTraceAll receive ctx:", ctx)
-		} else { //不存在，新增一个
-			r = r.WithContext(context.Background())
-			ctx, span := trace.StartSpan(r.Context(), name)
-			defer span.End()
-
-			r = r.WithContext(ctx)
-			//logger.Infof("-----------------helo HttpTraceAll not receive ctx:", ctx)
 		}
 
 		//todo : do something

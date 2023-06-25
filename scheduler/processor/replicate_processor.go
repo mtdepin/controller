@@ -54,7 +54,7 @@ func (p *ReplicateProcessor) Replicate(msg *e.Event) {
 		}
 
 		for _, rep := range task.Reps {
-			replicateRequest := p.generateReplicteRequest(request.OrderId, task.Cid, task.Origins, rep, request.Ext)
+			replicateRequest := p.generateReplicteRequest(request.OrderId, task.Cid, task.Origins, rep)
 
 			domain, ok := p.domainMap[rep.Region]
 			if !ok {
@@ -94,7 +94,7 @@ func (p *ReplicateProcessor) replicate(request *param.TaskReplicateRequest, doma
 
 	queryParam["expire-in"] = strconv.FormatUint(request.Expire, 10) + "ms"
 
-	rsp, err1 := ctl.DoRequest(request.Ext.Ctx, http.MethodPost, nameServerURL, queryParam, nil)
+	rsp, err1 := ctl.DoRequest(http.MethodPost, nameServerURL, queryParam, nil)
 	if err1 != nil {
 		return nil, err1
 	}
@@ -111,7 +111,7 @@ func (p *ReplicateProcessor) replicate(request *param.TaskReplicateRequest, doma
 	return ret, nil
 }
 
-func (p *ReplicateProcessor) generateReplicteRequest(orderId, cid, origins string, rep *param.RepInfo, ext *param.Extend) *param.TaskReplicateRequest {
+func (p *ReplicateProcessor) generateReplicteRequest(orderId, cid, origins string, rep *param.RepInfo) *param.TaskReplicateRequest {
 	return &param.TaskReplicateRequest{
 		OrderId:    orderId,
 		Cid:        cid,
@@ -123,6 +123,5 @@ func (p *ReplicateProcessor) generateReplicteRequest(orderId, cid, origins strin
 		Encryption: rep.Encryption,
 		NasList:    []string{},
 		Meta:       make(map[string]string, 1),
-		Ext:        ext,
 	}
 }

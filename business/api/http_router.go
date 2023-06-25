@@ -73,30 +73,4 @@ func RegisterAPIRouter(router *mux.Router, ck *services.Service) {
 	apiRouter.Methods(http.MethodOptions).Path("/downloadFinish").HandlerFunc(
 		maxClients(gz(api.HttpTraceAll(apiHandlers.DownloadFinish))))
 	//
-
-	apiRouter.Methods(http.MethodPost).Path("/deleteFid").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.DeleteFid))))
-
-	//test code
-	apiRouter.Methods(http.MethodOptions).Path("/deleteFid").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.DeleteFid))))
-	//
-
-	/*apiRouter.Methods(http.MethodGet).Path("/getUploadKNodes").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.GetUploadKNodes))))
-
-	//test code
-	apiRouter.Methods(http.MethodOptions).Path("/getUploadKNodes").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.GetUploadKNodes))))
-	*/
-	//
-
-	apiRouter.Methods(http.MethodPost).Path("/uploadPieceFid").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.UploadPieceFid))))
-
-	//test code
-	apiRouter.Methods(http.MethodOptions).Path("/uploadPieceFid").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.UploadPieceFid))))
-	//
-
 }

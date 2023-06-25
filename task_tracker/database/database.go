@@ -12,13 +12,12 @@ type DataBase struct {
 	OrgRequest      *mgo.Collection
 	DownloadRequest *mgo.Collection
 	FidReplication  *mgo.Collection
-	TaskInfo        *mgo.Collection
 }
 
 var Db = &DataBase{}
 
-func InitDB(url, user, pwd, dbName string, timeout int) error {
-	session, err := mongo.CreateSession(url, user, pwd, dbName, timeout)
+func InitDB(url, dbName string, timeout int) error {
+	session, err := mongo.CreateSession(url, timeout)
 	if err != nil {
 		return err
 	}
@@ -34,39 +33,6 @@ func InitDB(url, user, pwd, dbName string, timeout int) error {
 	Db.OrgRequest = db.C(OrgRequestCollection)
 	Db.DownloadRequest = db.C(DownloadRequestCollection)
 	Db.FidReplication = db.C(FidReplicationCollection)
-	Db.TaskInfo = db.C(TaskInfoCollection)
-
-	orderId := "order_id"
-	if err := createIndex(Db.OrderInfo, orderId); err != nil {
-		return err
-	}
-
-	if err := createIndex(Db.OrderState, orderId); err != nil {
-		return err
-	}
-
-	fid := "fid"
-	if err := createIndex(Db.FidReplication, fid); err != nil {
-		return err
-	}
 
 	return nil
-}
-
-func createIndex(collection *mgo.Collection, key string) error {
-	if indexs, err := collection.Indexes(); err == nil {
-		for i, _ := range indexs {
-			if indexs[i].Key[0] == key {
-				//fmt.Printf(" index key : %v, exist \n", key)
-				return nil
-			}
-		}
-	}
-
-	index := mgo.Index{
-		Key:    []string{key},
-		Unique: true,
-	}
-
-	return collection.EnsureIndex(index)
 }

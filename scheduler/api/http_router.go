@@ -40,12 +40,9 @@ func RegisterAPIRouter(router *mux.Router, ck *services.Service) {
 	apiRouter.Methods(http.MethodPost).Path("/charge").HandlerFunc(
 		maxClients(gz(api.HttpTraceAll(apiHandlers.Charge))))
 
-	apiRouter.Methods(http.MethodPost).Path("/deleteOrder").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.DeleteOrder))))
+	apiRouter.Methods(http.MethodPost).Path("/delete").HandlerFunc(
+		maxClients(gz(api.HttpTraceAll(apiHandlers.Delete))))
 
 	apiRouter.Methods(http.MethodGet).Path("/searchRep").HandlerFunc(
 		maxClients(gz(api.HttpTraceAll(apiHandlers.SearchRep))))
-
-	apiRouter.Methods(http.MethodPost).Path("/deleteFid").HandlerFunc(
-		maxClients(gz(api.HttpTraceAll(apiHandlers.DeleteFid))))
 }

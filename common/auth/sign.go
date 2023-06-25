@@ -40,11 +40,7 @@ func GenAuthToken(id, secret string) string {
 	return id + "." + ts + "." + nonce + "." + sign
 }
 
-//认证通过iam
 func AuthCheck(authorization, secret string) bool {
-	//to do proc
-	//token, ak, sk.
-	return true
 	strs := strings.Split(authorization, ".")
 	if len(strs) != 4 {
 		return false

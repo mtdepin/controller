@@ -1,12 +1,12 @@
 package statemachine
 
 import (
-	"controller/pkg/logger"
 	"controller/task_tracker/dict"
 	e "controller/task_tracker/event"
 	"controller/task_tracker/index"
 	"controller/task_tracker/param"
 	"controller/task_tracker/utils"
+	"errors"
 	"time"
 )
 
@@ -34,9 +34,9 @@ func (p *CallbackUpload) handleUploadSucEvent(event *e.CallbackUploadEvent) erro
 		return err
 	}
 
-	//订单不存在，或者订单状态还没上传成功，则返回成功。
-	if status, err := p.orderStateIndex.GetOrderStatus(event.OrderId); err != nil || status != dict.TASK_UPLOAD_SUC {
-		return nil
+	status, err := p.orderStateIndex.GetOrderStatus(event.OrderId)
+	if err != nil || status != dict.TASK_UPLOAD_SUC {
+		return err
 	}
 
 	//文件上传成功，开始备份.
@@ -49,40 +49,91 @@ func (p *CallbackUpload) handleUploadFailEvent(event *e.CallbackUploadEvent) err
 
 //备份文件
 func (p *CallbackUpload) Replicate(orderId string) error {
-	t1 := time.Now().UnixMilli()
-	logger.Infof(" uploadfinish  CallbackUpload: orderId: %v, GetReplicationStrategy begin: %v ", orderId, t1)
-
 	strategy, err := utils.GetReplicationStrategy(orderId)
 	if err != nil {
 		return err
 	}
 
-	t2 := time.Now().UnixMilli()
-	logger.Infof(" uploadfinish  CallbackUpload: orderId: %v, GetReplicationStrategy end: %v ms", orderId, t2-t1)
+	state, err1 := p.orderStateIndex.GetState(orderId)
+	if err1 != nil {
+		return err1
+	}
 
-	state, err := p.orderStateIndex.GetState(orderId)
-	if err != nil {
+	if err := p.createOrderUploadFinishState(strategy, state); err != nil {
 		return err
 	}
 
-	if err := setOrderReplicateInfo(strategy, state); err != nil {
-		return err
-	}
-
-	t3 := time.Now().UnixMilli()
-	logger.Infof(" uploadfinish  CallbackUpload: orderId: %v, Replicate begin: %v ms", orderId, t3-t2)
-	if rsp, err := utils.Replicate(&param.ReplicationRequest{OrderId: orderId, Tasks: state.Tasks}); err != nil {
-		utils.Log(utils.WARN, "handleUploadFinishSucEvent replicate ", err.Error(), &param.ReplicationRequest{OrderId: orderId, Tasks: state.Tasks})
-	} else { //根据响应，设置哪些任务备份成功，哪些任务备份失败.state.Tasks = {map[string]*dict.Task}
-		setOrderRspState(rsp, state) //添加一个开始备份状态
-	}
-	//再次更新订单是否开始备份.
-	t4 := time.Now().UnixMilli()
-	logger.Infof(" uploadfinish  CallbackUpload: orderId: %v, Replicate end: %v ms", orderId, t4-t3)
 	if err := p.orderStateIndex.Update(orderId, state); err != nil {
 		return err
 	}
-	t5 := time.Now().UnixMilli()
-	logger.Infof(" uploadfinish  CallbackUpload: orderId: %v, total time: %v ms", orderId, t5-t1)
-	return p.orderIndex.UpdateStatus(orderId, dict.TASK_BEGIN_REP)
+
+	if err := p.orderIndex.UpdateStatus(orderId, dict.TASK_UPLOAD_SUC); err != nil {
+		return err
+	}
+
+	if rsp, err := utils.Replicate(&param.ReplicationRequest{OrderId: orderId, Tasks: state.Tasks}); err != nil {
+		//订单所有任务都设置成失败.
+		SetOrderState(state, dict.TASK_REP_FAIL)
+		utils.Log(utils.WARN, "handleUploadFinishSucEvent replicate ", err.Error(), &param.ReplicationRequest{OrderId: orderId, Tasks: state.Tasks})
+	} else {
+		p.setOrderState(rsp, state)
+	}
+
+	return p.orderStateIndex.Update(orderId, state)
+}
+
+func (p *CallbackUpload) setTaskCid(strategy *param.StrategyInfo, state *dict.OrderStateInfo) {
+	for _, val := range strategy.Tasks {
+		if task, ok := state.Tasks[val.Fid]; ok {
+			val.Cid = task.Cid
+		}
+	}
+}
+
+func (p *CallbackUpload) createOrderUploadFinishState(strategy *param.StrategyInfo, state *dict.OrderStateInfo) error {
+	if strategy == nil || state == nil {
+		return errors.New("param error strategy or state is nil")
+	}
+
+	for _, val := range strategy.Tasks {
+		if task, ok := state.Tasks[val.Fid]; ok {
+			task.Reps = make(map[string]*dict.Rep, len(val.Reps))
+			for _, rep := range val.Reps {
+				task.Reps[rep.Region] = &dict.Rep{
+					Region:     rep.Region,
+					VirtualRep: rep.VirtualRep,
+					RealRep:    rep.RealRep,
+					MinRep:     rep.MinRep,
+					MaxRep:     rep.MaxRep,
+					Expire:     rep.Expire,
+					Encryption: rep.Encryption,
+					Status:     dict.TASK_UPLOAD_SUC,
+				}
+			}
+			task.Status = dict.TASK_UPLOAD_SUC
+		}
+	}
+
+	state.Status = dict.TASK_UPLOAD_SUC //订单上传完成
+	state.UpdateTime = time.Now().UnixMilli()
+
+	return nil
+}
+
+func (p *CallbackUpload) setOrderState(rsp *param.ReplicationResponse, state *dict.OrderStateInfo) {
+	for _, task := range rsp.Tasks {
+		stateTask, ok := state.Tasks[task.Fid]
+		if !ok {
+			continue
+		}
+
+		for region, status := range task.RegionStatus {
+			if status != param.SUCCESS {
+				if rep, ok := stateTask.Reps[region]; ok {
+					rep.Status = dict.TASK_REP_FAIL
+					state.Status = dict.TASK_REP_FAIL //订单中有一个区域没备份成功，则订单备份失败.
+				}
+			}
+		}
+	}
 }

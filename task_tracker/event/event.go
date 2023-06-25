@@ -12,7 +12,6 @@ const (
 	CALLBACK_REP
 	CALLBACK_CHARGE
 	TASK_DOWNLOAD_FINISH
-	CALLBACK_DOWNLOAD
 )
 
 type RepInfo struct {
@@ -91,11 +90,10 @@ type OrderDownloadFinishEvent struct {
 }
 
 type CreateOrderEvent struct {
-	RequestId string     `json:"request_id"`
-	OrderType int        `json:"order_type"`
-	PieceNum  int        `json:"piece_num"`
-	Fids      []*FidInfo `json:"fids"`
-	Cids      []string   `json:"cids"`
+	RequestId string   `json:"request_id"`
+	OrderType int      `json:"order_type"`
+	Fids      []string `json:"fids"`
+	Cids      []string `json:"cids"`
 }
 
 type Event struct {
@@ -113,45 +111,15 @@ type OrderRepCheckEvent struct {
 
 type OrderRepEvent struct {
 	Count   int //请求执行次数
-	OrderId string
-	//Request *param.ReplicationRequest
+	Request *param.ReplicationRequest
 }
 
 type OrderDeleteEvent struct {
 	Count   int //请求执行次数
-	OrderId string
-	//Request *param.DeleteOrderRequest
+	Request *param.DeleteOrderRequest
 }
 
 type OrderChargeEvent struct {
 	Count   int //请求执行次数
 	Request *param.ChargeRequest
-}
-
-type FidInfo struct {
-	Fid     string `json:"fid"`
-	Cid     string `json:"cid"`
-	Region  string `json:"region"`
-	Origins string `json:"origins"`
-	Repeate int    `json:"repeate"` //0.不重复， 1.重复订单.
-	Status  int    `json:"status"`
-}
-
-type CallbackDownloadEvent struct {
-	OrderId string `json:"order_id"`
-	Cid     string `json:"cid"`
-	Region  string `json:"region"`
-	Origins string `json:"origins"`
-	Status  int    `json:"status"`
-}
-
-type FidEvent struct {
-	Fid   string
-	Group string
-	Ret   chan *FidRet
-}
-
-type FidRet struct {
-	FidInfo *FidInfo
-	Err     error
 }

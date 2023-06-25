@@ -6,7 +6,6 @@ const (
 	OrgRequestCollection      = "org_request_info"
 	DownloadRequestCollection = "download_request_info"
 	FidReplicationCollection  = "fid_replication"
-	TaskInfoCollection        = "task_info"
 )
 
 const (
