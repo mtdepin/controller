@@ -1,0 +1,57 @@
+#节点配置
+node:
+  id: business_1
+  name: chengdu_c1
+  node_group: cluster
+  region: chengdu
+  api: 0.0.0.0:8610
+  pprof: 0.0.0.0:8600
+
+#数据库配置
+db:
+  url: 10.80.115.60:27017
+  dbName: kepler
+  dbUser: admin
+  dbPassword: 123456
+  timeout: 5
+  # db_password: 123456
+  #dbPassword: ca3177ddb74b18b26a1e7cb06cd091b3
+
+
+# tracing
+jaeger:
+  url:  10.80.115.60:6831
+# 日志配置 info ， debug， error， warning
+logger:
+  level: info
+
+request:
+  max: 10000
+  timeout: 300
+  protocol: http
+
+#检索服务
+searcher:
+  url: 10.80.115.41:8609
+
+#任务追踪服务
+tasktracker:
+  url: 10.80.115.41:8611
+
+#策略服务
+strategy:
+  url: 10.80.115.41:8613
+
+#账号服务
+account:
+  url: 10.80.115.41:8608
+
+#用户服务
+user:
+  url: 10.80.115.41:8615
+
+prometheus:
+  url: 10.80.115.220:18090
+
+supercluster:
+  region: aliyun

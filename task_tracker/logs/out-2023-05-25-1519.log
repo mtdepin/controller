@@ -1,0 +1,83 @@
+2023-05-25 15:19:55	INFO	task_tracker/main.go:54	config: {{{task_tracker_1 chendu_task_tracke_c1 cluster chengdu} ns_group 0.0.0.0:8611} {info} {10.80.8.113:6831} {10000 300 http} {192.168.2.98:8613} {192.168.2.98:8612} {b9319d14e6795244645968ae4a83f0903518af3836c48f6d0ce9460bc815bc16 SEC319c35ae4bdc94d2c54752aeba9d3a8476786c265d83f348249b406558284df6} {kepler 10.80.7.25:27017 mt 123456 5} {10.80.7.28:7001,10.80.7.30:7001 kepler123456 10.80.7.28:7001,10.80.7.30:7001 kepler123456} {kepler}},  schedulerUrl: 192.168.2.98:8612
+2023-05-25 15:19:55	INFO	tracing/setup.go:70	-------helo opts: %!(EXTRA jaeger.Options={  10.80.8.113:6831 <nil>    { []} 0})
+2023-05-25 15:19:55	ERROR	task_tracker/main.go:72	init jaeger success 
+2023-05-25 15:19:55	INFO	processor/check_rep_processor.go:33	----init search replicate order num: 0 repChanSize:102400
+2023-05-25 15:19:55	INFO	processor/replicate_porcessor.go:32	----init replicate order total_num: 0 rep_fail order_num: 0 upload finish order_num: 0 repChanSize:102400
+2023-05-25 15:19:55	INFO	processor/delete_processor.go:30	----init delete order num: 0 deleteChanSize:102400
+2023-05-25 15:19:55	INFO	processor/charge_processor.go:34	----init charge order num: 0 chanSize:102400
+2023-05-25 15:19:55	INFO	processor/piece_fid_processor.go:74	init redis cluster success
+2023-05-25 15:19:55	INFO	task_tracker/main.go:124	starting api Server : 0.0.0.0:8611
+2023-05-25 15:22:01	INFO	api/api-response.go:410	url:/task_tracker/v1/uploadPieceFid, request: {"request_id":"06d112e3-7065-4634-a562-b51e19b495d6","order_id":"f40d3614-1f5c-4826-af36-67877114837f","group":"chengdu","pieces":[{"fid":"0635d783f5f00c2c1f8dc444eee5c4af3ac95f24","min_rep":3,"max_rep":5,"expire":604800000,"size":5397,"name":""}]} 
+2023-05-25 15:22:02	ERROR	runtime/runtime.go:61	Observed a panic: "assignment to entry in nil map" (assignment to entry in nil map)
+goroutine 72 [running]:
+controller/pkg/runtime.logPanic({0x12e3a80?, 0x154d300})
+	D:/work/project/mt_nas/controller/pkg/runtime/runtime.go:57 +0x99
+controller/pkg/runtime.HandleCrash({0x0, 0x0, 0xc00032c6c0?})
+	D:/work/project/mt_nas/controller/pkg/runtime/runtime.go:31 +0x75
+panic({0x12e3a80, 0x154d300})
+	D:/dev/golang/go1.18/src/runtime/panic.go:838 +0x207
+controller/task_tracker/index.(*OrderStateIndex).AddPieceFid(0xc000308a20, {0xc000340060, 0x24}, {0xc000006488, 0x1, 0x90df05?})
+	D:/work/project/mt_nas/controller/task_tracker/index/order_state.go:53 +0x1ef
+controller/task_tracker/statemachine.(*StateCtl).AddPieceFid(...)
+	D:/work/project/mt_nas/controller/task_tracker/statemachine/state_controller.go:246
+controller/task_tracker/statemachine.(*StateMachine).AddPieceFid(...)
+	D:/work/project/mt_nas/controller/task_tracker/statemachine/state_machine.go:120
+controller/task_tracker/processor.(*PieceFidProcessor).UploadPieceFid(0xc000300a80, 0xc00049c370)
+	D:/work/project/mt_nas/controller/task_tracker/processor/piece_fid_processor.go:85 +0x205
+controller/task_tracker/manager.(*Manager).UploadPieceFid(...)
+	D:/work/project/mt_nas/controller/task_tracker/manager/manager.go:229
+controller/task_tracker/services.(*Service).UploadPieceFid(0x1554d70?, 0xc000212000?)
+	D:/work/project/mt_nas/controller/task_tracker/services/services.go:73 +0x25
+controller/task_tracker/api.(*apiHandlers).UploadPieceFid(0xc000006240, {0x1554d70, 0xc000212000}, 0xc000570400)
+	D:/work/project/mt_nas/controller/task_tracker/api/api.go:300 +0x1a5
+net/http.HandlerFunc.ServeHTTP(...)
+	D:/dev/golang/go1.18/src/net/http/server.go:2084
+controller/api.HttpTraceAll.func1({0x1554d70, 0xc000212000}, 0xc000570300)
+	D:/work/project/mt_nas/controller/api/handler-utils.go:64 +0xd57
+net/http.HandlerFunc.ServeHTTP(0x1b5c7c0?, {0x1554d70?, 0xc000212000?}, 0x4?)
+	D:/dev/golang/go1.18/src/net/http/server.go:2084 +0x2f
+github.com/klauspost/compress/gzhttp.NewWrapper.func1.1({0x1554ad0, 0xc0000140e0}, 0x0?)
+	C:/Users/justin/go/pkg/mod/github.com/klauspost/compress@v1.15.11/gzhttp/compress.go:386 +0x2f7
+net/http.HandlerFunc.ServeHTTP(...)
+	D:/dev/golang/go1.18/src/net/http/server.go:2084
+controller/pkg/http.MaxClients.func1({0x1554ad0, 0xc0000140e0}, 0xc000570300)
+	D:/work/project/mt_nas/controller/pkg/http/request_config.go:86 +0x254
+net/http.HandlerFunc.ServeHTTP(0x30?, {0x1554ad0?, 0xc0000140e0?}, 0x0?)
+	D:/dev/golang/go1.18/src/net/http/server.go:2084 +0x2f
+controller/api.setTimeValidityHandler.func1({0x1554ad0?, 0xc0000140e0?}, 0x90?)
+	D:/work/project/mt_nas/controller/api/handler.go:26 +0x38
+net/http.HandlerFunc.ServeHTTP(0x0?, {0x1554ad0?, 0xc0000140e0?}, 0x90e267?)
+	D:/dev/golang/go1.18/src/net/http/server.go:2084 +0x2f
+controller/api.setAuthHandler.func1({0x1554ad0?, 0xc0000140e0?}, 0xcfd4d3?)
+	D:/work/project/mt_nas/controller/api/handler.go:19 +0x38
+net/http.HandlerFunc.ServeHTTP(0x1297040?, {0x1554ad0?, 0xc0000140e0?}, 0xc00021d4a0?)
+	D:/dev/golang/go1.18/src/net/http/server.go:2084 +0x2f
+controller/api.filterReservedMetadata.func1({0x1554ad0?, 0xc0000140e0?}, 0xc00028c900?)
+	D:/work/project/mt_nas/controller/api/handler.go:12 +0x38
+net/http.HandlerFunc.ServeHTTP(0xc000570200?, {0x1554ad0?, 0xc0000140e0?}, 0x1?)
+	D:/dev/golang/go1.18/src/net/http/server.go:2084 +0x2f
+github.com/gorilla/mux.(*Router).ServeHTTP(0xc00013e000, {0x1554ad0, 0xc0000140e0}, 0xc000570100)
+	C:/Users/justin/go/pkg/mod/github.com/gorilla/mux@v1.8.0/mux.go:210 +0x1cf
+controller/pkg/http.(*Server).Start.func1({0x1554ad0?, 0xc0000140e0?}, 0xc0000ec020?)
+	D:/work/project/mt_nas/controller/pkg/http/server.go:80 +0x1ba
+net/http.HandlerFunc.ServeHTTP(0x0?, {0x1554ad0?, 0xc0000140e0?}, 0x90df05?)
+	D:/dev/golang/go1.18/src/net/http/server.go:2084 +0x2f
+net/http.serverHandler.ServeHTTP({0x1552ae0?}, {0x1554ad0, 0xc0000140e0}, 0xc000570100)
+	D:/dev/golang/go1.18/src/net/http/server.go:2916 +0x43b
+net/http.(*conn).serve(0xc000334000, {0x15553f0, 0xc00028d6b0})
+	D:/dev/golang/go1.18/src/net/http/server.go:1966 +0x5d7
+created by net/http.(*Server).Serve
+	D:/dev/golang/go1.18/src/net/http/server.go:3071 +0x4db
+
+2023-05-25 15:25:28	INFO	api/api-response.go:410	url:/task_tracker/v1/createTask, request: {"request_id":"f548d514-2c0c-4a3b-9e2c-8ad940c2a55c","task_type":1} 
+2023-05-25 15:25:28	INFO	statemachine/order_create.go:56	 create_upload_order, order_id: 8c80b308-8bb7-40f7-b69f-bac055d41a08, status: 1, update_time: 1684999528197
+2023-05-25 15:25:42	INFO	api/api-response.go:410	url:/task_tracker/v1/uploadPieceFid, request: {"request_id":"38aed744-7405-46e4-98de-2ac212fd7ca4","order_id":"8c80b308-8bb7-40f7-b69f-bac055d41a08","group":"chengdu","pieces":[{"fid":"6a50d5dcc9975e0ff11280b0c4a6eecdd369369c","min_rep":3,"max_rep":5,"expire":604800000,"size":6812,"name":""}]} 
+2023-05-25 15:31:50	INFO	api/api-response.go:410	url:/task_tracker/v1/createTask, request: {"request_id":"7c3b13bd-2e8a-412f-b4e8-c35a5c694b46","task_type":1} 
+2023-05-25 15:31:51	INFO	statemachine/order_create.go:56	 create_upload_order, order_id: b80b9b90-195c-4194-bcaf-99cb20a79333, status: 1, update_time: 1684999911075
+2023-05-25 15:32:03	INFO	api/api-response.go:410	url:/task_tracker/v1/uploadPieceFid, request: {"request_id":"96ec62fa-9790-4779-a68f-41d3c233cecb","order_id":"b80b9b90-195c-4194-bcaf-99cb20a79333","group":"chengdu","pieces":[{"fid":"553047b57dc7bf0bc4ca7708016cafe5bdae1406","min_rep":3,"max_rep":5,"expire":604800000,"size":1059,"name":""}]} 
+2023-05-25 15:32:54	INFO	api/api-response.go:410	url:/task_tracker/v1/createTask, request: {"request_id":"1d38dc50-8c99-4300-9743-28d4975ba0fe","task_type":1} 
+2023-05-25 15:32:54	INFO	statemachine/order_create.go:56	 create_upload_order, order_id: 9af57da1-81ad-4c1f-a8fb-e2dc24ab4993, status: 1, update_time: 1684999974569
+2023-05-25 15:32:55	INFO	api/api-response.go:410	url:/task_tracker/v1/uploadPieceFid, request: {"request_id":"60c11bcb-022d-492a-a091-d7ae16fe5c0c","order_id":"9af57da1-81ad-4c1f-a8fb-e2dc24ab4993","group":"chengdu","pieces":[{"fid":"553047b57dc7bf0bc4ca7708016cafe5bdae1406","min_rep":3,"max_rep":5,"expire":604800000,"size":1059,"name":""}]} 
+2023-05-25 15:33:59	INFO	api/api-response.go:410	url:/task_tracker/v1/createTask, request: {"request_id":"03925973-f664-4889-8c38-3c6628909c82","task_type":1} 
+2023-05-25 15:33:59	INFO	statemachine/order_create.go:56	 create_upload_order, order_id: 083ed2a6-5583-468b-9f95-aff0e2bf4612, status: 1, update_time: 1685000039637
+2023-05-25 15:34:00	INFO	api/api-response.go:410	url:/task_tracker/v1/uploadPieceFid, request: {"request_id":"12ee9c5c-b62a-4f26-aeb5-c5349a488379","order_id":"083ed2a6-5583-468b-9f95-aff0e2bf4612","group":"chengdu","pieces":[{"fid":"de09f1cd4c20d0e9ce6ad87cf652926cf6624238","min_rep":3,"max_rep":5,"expire":604800000,"size":819,"name":""}]} 

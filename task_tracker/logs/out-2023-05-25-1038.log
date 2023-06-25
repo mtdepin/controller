@@ -1,0 +1,26 @@
+2023-05-25 10:38:56	INFO	task_tracker/task_tracker_api_test.go:45	config: {{{task_tracker_1 chendu_task_tracke_c1 cluster chengdu} ns_group 0.0.0.0:8611} {info} {10.80.8.113:6831} {10000 300 http} {192.168.2.98:8613} {192.168.2.98:8612} {b9319d14e6795244645968ae4a83f0903518af3836c48f6d0ce9460bc815bc16 SEC319c35ae4bdc94d2c54752aeba9d3a8476786c265d83f348249b406558284df6} {kepler 10.80.7.25:27017 mt 123456 5} {10.80.7.28:7001,10.80.7.30:7001 kepler123456 10.80.7.28:7001,10.80.7.30:7001 kepler123456} {kepler}},  schedulerUrl: 192.168.2.98:8612
+2023-05-25 10:38:58	INFO	processor/check_rep_processor.go:33	----init search replicate order num: 13 repChanSize:102413
+2023-05-25 10:38:58	INFO	processor/replicate_porcessor.go:32	----init replicate order total_num: 8 rep_fail order_num: 2 upload finish order_num: 6 repChanSize:102408
+2023-05-25 10:38:58	INFO	statemachine/order_uploadfinish.go:50	 uploadfinish : orderId: a55a8d7b-a412-431e-a943-d4c90065989e, GetReplicationStrategy begin: 1684982338754 
+2023-05-25 10:39:00	WARN	utils/utils.go:263	StateCtl HandleUploadFinishEvent, fail: doRequest fail, statuscode: 500, msg: {"Code":"InternalError","Description":"internal ctlerror","HTTPStatusCode":500}
+,  url:http://192.168.2.98:8613/strategy/v1/getReplicateStrategy, event: {"order_id":"a55a8d7b-a412-431e-a943-d4c90065989e","status":1}
+2023-05-25 10:39:00	INFO	statemachine/order_uploadfinish.go:50	 uploadfinish : orderId: ba096bf6-13f0-4a84-86b4-2026a8255988, GetReplicationStrategy begin: 1684982340008 
+2023-05-25 10:39:01	WARN	utils/utils.go:263	StateCtl HandleUploadFinishEvent, fail: doRequest fail, statuscode: 500, msg: {"Code":"InternalError","Description":"internal ctlerror","HTTPStatusCode":500}
+,  url:http://192.168.2.98:8613/strategy/v1/getReplicateStrategy, event: {"order_id":"ba096bf6-13f0-4a84-86b4-2026a8255988","status":1}
+2023-05-25 10:39:01	INFO	statemachine/order_uploadfinish.go:50	 uploadfinish : orderId: c831c75b-ebfc-4749-921e-607eb370c03e, GetReplicationStrategy begin: 1684982341251 
+2023-05-25 10:39:02	WARN	utils/utils.go:263	StateCtl HandleUploadFinishEvent, fail: doRequest fail, statuscode: 500, msg: {"Code":"InternalError","Description":"internal ctlerror","HTTPStatusCode":500}
+,  url:http://192.168.2.98:8613/strategy/v1/getReplicateStrategy, event: {"order_id":"c831c75b-ebfc-4749-921e-607eb370c03e","status":1}
+2023-05-25 10:39:02	INFO	statemachine/order_uploadfinish.go:50	 uploadfinish : orderId: 100d837c-91f9-4c34-9daf-de7415889820, GetReplicationStrategy begin: 1684982342480 
+2023-05-25 10:39:03	WARN	utils/utils.go:263	StateCtl HandleUploadFinishEvent, fail: doRequest fail, statuscode: 500, msg: {"Code":"InternalError","Description":"internal ctlerror","HTTPStatusCode":500}
+,  url:http://192.168.2.98:8613/strategy/v1/getReplicateStrategy, event: {"order_id":"100d837c-91f9-4c34-9daf-de7415889820","status":1}
+2023-05-25 10:39:03	INFO	statemachine/order_uploadfinish.go:50	 uploadfinish : orderId: f7c91764-6494-47b1-a99c-3c8a036c4563, GetReplicationStrategy begin: 1684982343707 
+2023-05-25 10:39:04	WARN	utils/utils.go:263	StateCtl HandleUploadFinishEvent, fail: doRequest fail, statuscode: 500, msg: {"Code":"InternalError","Description":"internal ctlerror","HTTPStatusCode":500}
+,  url:http://192.168.2.98:8613/strategy/v1/getReplicateStrategy, event: {"order_id":"f7c91764-6494-47b1-a99c-3c8a036c4563","status":1}
+2023-05-25 10:39:04	INFO	statemachine/order_uploadfinish.go:50	 uploadfinish : orderId: 8519a4e1-1b86-435b-84f6-e58bdcb4fbff, GetReplicationStrategy begin: 1684982344948 
+2023-05-25 10:39:06	WARN	utils/utils.go:263	StateCtl HandleUploadFinishEvent, fail: doRequest fail, statuscode: 500, msg: {"Code":"InternalError","Description":"internal ctlerror","HTTPStatusCode":500}
+,  url:http://192.168.2.98:8613/strategy/v1/getReplicateStrategy, event: {"order_id":"8519a4e1-1b86-435b-84f6-e58bdcb4fbff","status":1}
+2023-05-25 10:39:06	INFO	processor/delete_processor.go:30	----init delete order num: 0 deleteChanSize:102400
+2023-05-25 10:39:06	INFO	processor/charge_processor.go:34	----init charge order num: 0 chanSize:102400
+2023-05-25 10:39:06	INFO	processor/piece_fid_processor.go:74	init redis cluster success
+2023-05-25 10:39:06	INFO	statemachine/order_create.go:56	 create_upload_order, order_id: 96f9918c-3c96-4454-9b30-aad5c397cccd, status: 1, update_time: 1684982346318
+2023-05-25 10:39:06	INFO	statemachine/order_create.go:56	 create_upload_order, order_id: ad0c0850-aad6-4893-a3f1-daca6f9f7022, status: 1, update_time: 1684982346544

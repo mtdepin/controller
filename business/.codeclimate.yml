@@ -1,0 +1,44 @@
+ratings:
+  paths: 
+  - "**/*.go"
+
+exclude_paths:
+- test/
+- Godeps/
+- thirdparty/
+- "**/*.pb.go"
+
+engines:
+  fixme:
+    enabled: true
+    config:
+      strings:
+      - FIXME
+      - HACK
+      - XXX
+      - BUG
+  golint:
+    enabled: true
+  govet:
+    enabled: true
+  gofmt:
+    enabled: true
+
+version: "2"
+checks:
+  file-lines:
+    config:
+      threshold: 1000
+  method-complexity:
+    config:
+      threshold: 20
+  method-lines:
+    enabled: false
+  similar-code:
+    enabled: false
+  return-statements:
+    config:
+      threshold: 10
+  argument-count:
+    config:
+      threshold: 6

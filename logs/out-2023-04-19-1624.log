@@ -1,0 +1,4 @@
+2023-04-19 16:24:51	INFO	business/main.go:51	config Info: %v{{{business_1 chengdu_c1 cluster chengdu} ns_group 0.0.0.0:8610} {info} {10.80.8.113:6831} {10000 300 http} {192.168.2.98:8609} {192.168.2.98:8613} {192.168.2.98:8611} {10.80.7.32:8608} {10.80.7.32:8615} {kepler 10.80.7.25:27017 mt 123456 5}}
+2023-04-19 16:24:51	INFO	tracing/setup.go:70	-------helo opts: %!(EXTRA jaeger.Options={  10.80.8.113:6831 <nil>    { []} 0})
+2023-04-19 16:24:51	ERROR	business/main.go:72	init jaeger success 0
+2023-04-19 16:24:51	INFO	business/main.go:120	starting api Server : 0.0.0.0:8610

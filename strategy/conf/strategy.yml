@@ -1,0 +1,43 @@
+#节点配置
+node:
+  id: strategy_1
+  name: chengdu_c1
+  node_group: cluster
+  region: chengdu
+  api: 0.0.0.0:8613
+  pprof: 0.0.0.0:8600
+
+#数据库配置
+db:
+  url: 10.80.115.60:27017
+  dbName: kepler
+  dbUser: admin
+  # db_password: 123456
+  #dbPassword: ca3177ddb74b18b26a1e7cb06cd091b3
+  dbPassword: 123456
+  timeout: 5
+
+# tracing
+jaeger:
+  url:  10.80.115.60:6831
+# 日志配置 info ， debug， error， warning
+logger:
+  level: info
+
+request:
+  max: 10000
+  timeout: 300
+  protocol: http
+
+redis:
+  lockAddress: 10.80.115.60:6379,10.80.115.61:6379
+  lockPassword: kepler123456
+  fidAddress: 10.80.115.60:6379,10.80.115.61:6379
+  fidPassword: kepler123456
+
+#24小时过期,單位ms
+delete:
+  period: 86400000
+
+lock:
+  Prefix: "kepler"

@@ -1,0 +1,21 @@
+version: "3.4"
+
+networks:
+  kepler_default:
+    external: true
+services:
+
+  cluster:
+    container_name: scheduler
+    image: scheduler:v0
+    ports:
+      - "8612:8612"
+      - "8983:8983"
+
+    restart: always
+    volumes:
+      - ./conf/:/controller/scheduler/conf/
+      - ./logs/:/controller/scheduler/logs/
+
+    networks:
+      kepler_default:

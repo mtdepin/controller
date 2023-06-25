@@ -1,0 +1,13 @@
+2023-05-25 14:18:01	INFO	task_tracker/main.go:54	config: {{{task_tracker_1 chendu_task_tracke_c1 cluster chengdu} ns_group 0.0.0.0:8611} {info} {10.80.8.113:6831} {10000 300 http} {192.168.2.98:8613} {192.168.2.98:8612} {b9319d14e6795244645968ae4a83f0903518af3836c48f6d0ce9460bc815bc16 SEC319c35ae4bdc94d2c54752aeba9d3a8476786c265d83f348249b406558284df6} {kepler 10.80.7.25:27017 mt 123456 5} {10.80.7.28:7001,10.80.7.30:7001 kepler123456 10.80.7.28:7001,10.80.7.30:7001 kepler123456} {kepler}},  schedulerUrl: 192.168.2.98:8612
+2023-05-25 14:18:01	INFO	tracing/setup.go:70	-------helo opts: %!(EXTRA jaeger.Options={  10.80.8.113:6831 <nil>    { []} 0})
+2023-05-25 14:18:01	ERROR	task_tracker/main.go:72	init jaeger success 
+2023-05-25 14:18:02	INFO	processor/check_rep_processor.go:33	----init search replicate order num: 0 repChanSize:102400
+2023-05-25 14:18:02	INFO	processor/replicate_porcessor.go:32	----init replicate order total_num: 0 rep_fail order_num: 0 upload finish order_num: 0 repChanSize:102400
+2023-05-25 14:18:02	INFO	processor/delete_processor.go:30	----init delete order num: 0 deleteChanSize:102400
+2023-05-25 14:18:02	INFO	processor/charge_processor.go:34	----init charge order num: 0 chanSize:102400
+2023-05-25 14:18:02	INFO	processor/piece_fid_processor.go:74	init redis cluster success
+2023-05-25 14:18:02	INFO	task_tracker/main.go:124	starting api Server : 0.0.0.0:8611
+2023-05-25 14:33:01	INFO	api/api-response.go:410	url:/task_tracker/v1/createTask, request: {"request_id":"d12c8ae3-dc72-4afe-98a5-8ac2d134ce59","task_type":1} 
+2023-05-25 14:33:01	INFO	statemachine/order_create.go:56	 create_upload_order, order_id: f5c89d79-bf63-4757-82a3-f84bf9a12a77, status: 1, update_time: 1684996381592
+2023-05-25 14:37:18	INFO	api/api-response.go:410	url:/task_tracker/v1/createTask, request: {"request_id":"eccb70ea-64c6-495f-bc68-bd9084d4b088","task_type":1} 
+2023-05-25 14:37:18	INFO	statemachine/order_create.go:56	 create_upload_order, order_id: 41f3114c-1ba2-4513-9ace-ff5d08c76747, status: 1, update_time: 1684996638541

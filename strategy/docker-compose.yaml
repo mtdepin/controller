@@ -1,0 +1,21 @@
+version: "3.4"
+
+networks:
+  kepler_default:
+    external: true
+services:
+
+  cluster:
+    container_name: strategy
+    image: strategy:v0
+    ports:
+      - "8613:8613"
+      - "8982:8982"
+
+    restart: always
+    volumes:
+      - ./conf/:/controller/strategy/conf/
+      - ./logs/:/controller/strategy/logs/
+
+    networks:
+      kepler_default:

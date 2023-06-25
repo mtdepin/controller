@@ -1,0 +1,17 @@
+2023-05-25 14:40:38	INFO	task_tracker/main.go:54	config: {{{task_tracker_1 chendu_task_tracke_c1 cluster chengdu} ns_group 0.0.0.0:8611} {info} {10.80.8.113:6831} {10000 300 http} {192.168.2.98:8613} {192.168.2.98:8612} {b9319d14e6795244645968ae4a83f0903518af3836c48f6d0ce9460bc815bc16 SEC319c35ae4bdc94d2c54752aeba9d3a8476786c265d83f348249b406558284df6} {kepler 10.80.7.25:27017 mt 123456 5} {10.80.7.28:7001,10.80.7.30:7001 kepler123456 10.80.7.28:7001,10.80.7.30:7001 kepler123456} {kepler}},  schedulerUrl: 192.168.2.98:8612
+2023-05-25 14:40:38	INFO	tracing/setup.go:70	-------helo opts: %!(EXTRA jaeger.Options={  10.80.8.113:6831 <nil>    { []} 0})
+2023-05-25 14:40:38	ERROR	task_tracker/main.go:72	init jaeger success 
+2023-05-25 14:40:39	INFO	processor/check_rep_processor.go:33	----init search replicate order num: 0 repChanSize:102400
+2023-05-25 14:40:39	INFO	processor/replicate_porcessor.go:32	----init replicate order total_num: 0 rep_fail order_num: 0 upload finish order_num: 0 repChanSize:102400
+2023-05-25 14:40:39	INFO	processor/delete_processor.go:30	----init delete order num: 0 deleteChanSize:102400
+2023-05-25 14:40:39	INFO	processor/charge_processor.go:34	----init charge order num: 0 chanSize:102400
+2023-05-25 14:40:39	INFO	processor/piece_fid_processor.go:74	init redis cluster success
+2023-05-25 14:40:39	INFO	task_tracker/main.go:124	starting api Server : 0.0.0.0:8611
+2023-05-25 14:54:48	INFO	api/api-response.go:410	url:/task_tracker/v1/createTask, request: {"request_id":"5d505405-5d64-48ce-bc5a-300b62809491","task_type":1} 
+2023-05-25 14:54:48	INFO	statemachine/order_create.go:56	 create_upload_order, order_id: 7be1076b-2cb6-43bb-8713-f2a0ef661d9c, status: 1, update_time: 1684997688321
+2023-05-25 14:56:45	INFO	api/api-response.go:410	url:/task_tracker/v1/createTask, request: {"request_id":"b50d81d8-dbe6-4abf-a100-e462c147f063","task_type":1} 
+2023-05-25 14:56:45	INFO	statemachine/order_create.go:56	 create_upload_order, order_id: 7404bdb1-3725-4c1f-969b-56ea161099f6, status: 1, update_time: 1684997805599
+2023-05-25 15:02:53	INFO	api/api-response.go:410	url:/task_tracker/v1/createTask, request: {"request_id":"2965b633-dbbe-4803-b565-8f3483513af8","task_type":1} 
+2023-05-25 15:02:53	INFO	statemachine/order_create.go:56	 create_upload_order, order_id: 4e82def2-6388-4bdc-b557-e2f7fd2820f1, status: 1, update_time: 1684998173359
+2023-05-25 15:11:59	INFO	api/api-response.go:410	url:/task_tracker/v1/createTask, request: {"request_id":"9ee7229c-4025-433c-a1bf-6dee52959b35","task_type":1} 
+2023-05-25 15:11:59	INFO	statemachine/order_create.go:56	 create_upload_order, order_id: f40d3614-1f5c-4826-af36-67877114837f, status: 1, update_time: 1684998719546

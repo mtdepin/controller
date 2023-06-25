@@ -1,0 +1,20 @@
+version: "3.4"
+
+networks:
+  kepler_default:
+    external: true
+services:
+
+  cluster:
+    container_name: task_tracker
+    image: task_tracker:v0
+    ports:
+      - "8611:8611"
+      - "8989:8989"
+    restart: always
+    volumes:
+      - ./conf/:/controller/task_tracker/conf/
+      - ./logs/:/controller/task_tracker/logs/
+
+    networks:
+      kepler_default:

@@ -1,0 +1,22 @@
+version: "3.4"
+
+networks:
+  kepler_default:
+    external: true
+services:
+
+  cluster:
+    container_name: business
+    #image: harbor.mty.wang/kepler/business:v0
+    image: business:v0
+    ports:
+      - "8610:8610"
+      - "8981:8981"
+
+    restart: always
+    volumes:
+      - ./conf/:/controller/business/conf/
+      - ./logs/:/controller/business/logs/
+
+    networks:
+      kepler_default:

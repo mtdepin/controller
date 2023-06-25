@@ -1,0 +1,52 @@
+#节点配置
+node:
+  id: task_tracker_1
+  name: chendu_task_tracke_c1
+  node_group: cluster
+  region: chengdu
+  api: 0.0.0.0:8611
+  pprof: 0.0.0.0:8600
+
+#数据库配置
+db:
+  url: 10.80.7.25:27017
+  dbName: kepler
+  dbUser: mt
+  # db_password: 123456
+  #dbPassword: ca3177ddb74b18b26a1e7cb06cd091b3
+  dbPassword: 123456
+  timeout: 5
+
+# tracing
+jaeger:
+  url:  10.80.8.113:6831
+# 日志配置 info ， debug， error， warning
+logger:
+  level: info
+
+request:
+  max: 10000
+  timeout: 300
+  protocol: http
+
+#调度服务器
+scheduler:
+  url: 192.168.2.98:8612
+
+
+#策略服务
+strategy:
+  url: 192.168.2.98:8613
+
+montior:
+  accessToken: b9319d14e6795244645968ae4a83f0903518af3836c48f6d0ce9460bc815bc16
+  secret: SEC319c35ae4bdc94d2c54752aeba9d3a8476786c265d83f348249b406558284df6
+
+redis:
+  lockAddress: 10.80.7.28:7001,10.80.7.30:7001
+  lockPassword: kepler123456
+  fidAddress: 10.80.7.28:7001,10.80.7.30:7001
+  fidPassword: kepler123456
+
+lock:
+  Prefix: "kepler"

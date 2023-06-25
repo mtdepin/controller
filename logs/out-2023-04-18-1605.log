@@ -1,0 +1,3 @@
+2023-04-18 16:05:21	INFO	business/main.go:51	config Info: %v{{{business_1 chengdu_c1 cluster chengdu} ns_group 0.0.0.0:8610} {info} {10.80.8.113:16686} {10000 300 http} {192.168.2.98:8609} {192.168.2.98:8613} {192.168.2.98:8611} {10.80.7.26:8608} {10.80.7.26:8615} {kepler 10.80.7.25:27017 mt 123456 5}}
+2023-04-18 16:05:21	ERROR	business/main.go:72	init jaeger success 
+2023-04-18 16:05:21	INFO	business/main.go:120	starting api Server : 0.0.0.0:8610

@@ -1,0 +1,1 @@
+2023-04-19 14:33:08	INFO	tracing/setup.go:70	-------helo opts: %!(EXTRA jaeger.Options={  10.80.8.113:6831 <nil>    { []} 0})

@@ -1,0 +1,37 @@
+2023-05-25 18:31:42	INFO	task_tracker/main.go:54	config: {{{task_tracker_1 chendu_task_tracke_c1 cluster chengdu} ns_group 0.0.0.0:8611} {info} {10.80.8.113:6831} {10000 300 http} {192.168.2.98:8613} {192.168.2.98:8612} {b9319d14e6795244645968ae4a83f0903518af3836c48f6d0ce9460bc815bc16 SEC319c35ae4bdc94d2c54752aeba9d3a8476786c265d83f348249b406558284df6} {kepler 10.80.7.25:27017 mt 123456 5} {10.80.7.28:7001,10.80.7.30:7001 kepler123456 10.80.7.28:7001,10.80.7.30:7001 kepler123456} {kepler}},  schedulerUrl: 192.168.2.98:8612
+2023-05-25 18:31:42	INFO	tracing/setup.go:70	-------helo opts: %!(EXTRA jaeger.Options={  10.80.8.113:6831 <nil>    { []} 0})
+2023-05-25 18:31:42	ERROR	task_tracker/main.go:72	init jaeger success 
+2023-05-25 18:31:43	INFO	processor/check_rep_processor.go:33	----init search replicate order num: 0 repChanSize:102400
+2023-05-25 18:31:43	INFO	processor/replicate_porcessor.go:32	----init replicate order total_num: 9 rep_fail order_num: 3 upload finish order_num: 6 repChanSize:102409
+2023-05-25 18:31:43	INFO	statemachine/order_uploadfinish.go:50	 uploadfinish : orderId: 8ef7249c-08bb-4885-a3c8-583400d50fba, GetReplicationStrategy begin: 1685010703200 
+2023-05-25 18:31:44	WARN	utils/utils.go:263	StateCtl HandleUploadFinishEvent, fail: doRequest fail, statuscode: 500, msg: {"Code":"InternalError","Description":"internal ctlerror","HTTPStatusCode":500}
+,  url:http://192.168.2.98:8613/strategy/v1/getReplicateStrategy, event: {"order_id":"8ef7249c-08bb-4885-a3c8-583400d50fba","status":1}
+2023-05-25 18:31:44	INFO	statemachine/order_uploadfinish.go:50	 uploadfinish : orderId: 81b38cc5-2530-4904-82fc-438c7c50c462, GetReplicationStrategy begin: 1685010704301 
+2023-05-25 18:31:45	WARN	utils/utils.go:263	StateCtl HandleUploadFinishEvent, fail: doRequest fail, statuscode: 500, msg: {"Code":"InternalError","Description":"internal ctlerror","HTTPStatusCode":500}
+,  url:http://192.168.2.98:8613/strategy/v1/getReplicateStrategy, event: {"order_id":"81b38cc5-2530-4904-82fc-438c7c50c462","status":1}
+2023-05-25 18:31:45	INFO	statemachine/order_uploadfinish.go:50	 uploadfinish : orderId: abe976bd-d7c2-4ace-9afa-0a3859d0e478, GetReplicationStrategy begin: 1685010705380 
+2023-05-25 18:31:46	WARN	utils/utils.go:263	StateCtl HandleUploadFinishEvent, fail: doRequest fail, statuscode: 500, msg: {"Code":"InternalError","Description":"internal ctlerror","HTTPStatusCode":500}
+,  url:http://192.168.2.98:8613/strategy/v1/getReplicateStrategy, event: {"order_id":"abe976bd-d7c2-4ace-9afa-0a3859d0e478","status":1}
+2023-05-25 18:31:46	INFO	statemachine/order_uploadfinish.go:50	 uploadfinish : orderId: 20f29930-bdf8-44b2-832e-9fca0fa5851f, GetReplicationStrategy begin: 1685010706467 
+2023-05-25 18:31:47	WARN	utils/utils.go:263	StateCtl HandleUploadFinishEvent, fail: doRequest fail, statuscode: 500, msg: {"Code":"InternalError","Description":"internal ctlerror","HTTPStatusCode":500}
+,  url:http://192.168.2.98:8613/strategy/v1/getReplicateStrategy, event: {"order_id":"20f29930-bdf8-44b2-832e-9fca0fa5851f","status":1}
+2023-05-25 18:31:47	INFO	statemachine/order_uploadfinish.go:50	 uploadfinish : orderId: 09cd0f19-18e2-4f11-a184-5ec2135d51df, GetReplicationStrategy begin: 1685010707557 
+2023-05-25 18:31:48	WARN	utils/utils.go:263	StateCtl HandleUploadFinishEvent, fail: doRequest fail, statuscode: 500, msg: {"Code":"InternalError","Description":"internal ctlerror","HTTPStatusCode":500}
+,  url:http://192.168.2.98:8613/strategy/v1/getReplicateStrategy, event: {"order_id":"09cd0f19-18e2-4f11-a184-5ec2135d51df","status":1}
+2023-05-25 18:31:48	INFO	statemachine/order_uploadfinish.go:50	 uploadfinish : orderId: 926e9c82-e41e-4253-b0a7-4abe4de06837, GetReplicationStrategy begin: 1685010708644 
+2023-05-25 18:31:49	WARN	utils/utils.go:263	StateCtl HandleUploadFinishEvent, fail: doRequest fail, statuscode: 500, msg: {"Code":"InternalError","Description":"internal ctlerror","HTTPStatusCode":500}
+,  url:http://192.168.2.98:8613/strategy/v1/getReplicateStrategy, event: {"order_id":"926e9c82-e41e-4253-b0a7-4abe4de06837","status":1}
+2023-05-25 18:31:49	INFO	processor/delete_processor.go:30	----init delete order num: 0 deleteChanSize:102400
+2023-05-25 18:31:49	INFO	processor/charge_processor.go:34	----init charge order num: 0 chanSize:102400
+2023-05-25 18:31:49	INFO	processor/piece_fid_processor.go:74	init redis cluster success
+2023-05-25 18:31:49	INFO	task_tracker/main.go:124	starting api Server : 0.0.0.0:8611
+2023-05-25 18:35:27	WARN	utils/utils.go:263	ReplicateProcessor  GetReplicationStrategy , fail: Get "http://192.168.2.98:8613/strategy/v1/getReplicateStrategy": dial tcp 192.168.2.98:8613: connectex: No connection could be made because the target machine actively refused it., event: {"Count":19,"OrderId":"57d0cf38-2bec-4ea6-a679-9bc36fd6ef1e"}
+2023-05-25 18:35:30	WARN	utils/utils.go:263	ReplicateProcessor  GetReplicationStrategy , fail: Get "http://192.168.2.98:8613/strategy/v1/getReplicateStrategy": dial tcp 192.168.2.98:8613: connectex: No connection could be made because the target machine actively refused it., event: {"Count":19,"OrderId":"0664f5cd-d73f-4045-9f3c-874b68b1af0d"}
+2023-05-25 18:35:32	WARN	utils/utils.go:263	ReplicateProcessor  GetReplicationStrategy , fail: Get "http://192.168.2.98:8613/strategy/v1/getReplicateStrategy": dial tcp 192.168.2.98:8613: connectex: No connection could be made because the target machine actively refused it., event: {"Count":19,"OrderId":"2c8dad73-62da-4357-ae26-a5525929f04b"}
+2023-05-25 18:35:44	WARN	utils/utils.go:263	ReplicateProcessor  GetReplicationStrategy , fail: Get "http://192.168.2.98:8613/strategy/v1/getReplicateStrategy": dial tcp 192.168.2.98:8613: connectex: No connection could be made because the target machine actively refused it., event: {"Count":20,"OrderId":"57d0cf38-2bec-4ea6-a679-9bc36fd6ef1e"}
+2023-05-25 18:35:46	WARN	utils/utils.go:263	ReplicateProcessor  GetReplicationStrategy , fail: Get "http://192.168.2.98:8613/strategy/v1/getReplicateStrategy": dial tcp 192.168.2.98:8613: connectex: No connection could be made because the target machine actively refused it., event: {"Count":20,"OrderId":"0664f5cd-d73f-4045-9f3c-874b68b1af0d"}
+2023-05-25 18:36:00	WARN	utils/utils.go:263	ReplicateProcessor  GetReplicationStrategy , fail: Get "http://192.168.2.98:8613/strategy/v1/getReplicateStrategy": dial tcp 192.168.2.98:8613: connectex: No connection could be made because the target machine actively refused it., event: {"Count":21,"OrderId":"57d0cf38-2bec-4ea6-a679-9bc36fd6ef1e"}
+2023-05-25 18:36:02	WARN	utils/utils.go:263	ReplicateProcessor  GetReplicationStrategy , fail: Get "http://192.168.2.98:8613/strategy/v1/getReplicateStrategy": dial tcp 192.168.2.98:8613: connectex: No connection could be made because the target machine actively refused it., event: {"Count":21,"OrderId":"0664f5cd-d73f-4045-9f3c-874b68b1af0d"}
+2023-05-25 18:41:56	ERROR	utils/utils.go:265	ReplicateProcessor addRepEventToCache, fail: replicate count:50 more than 50, event: {"Count":50,"OrderId":"57d0cf38-2bec-4ea6-a679-9bc36fd6ef1e"}
+2023-05-25 18:41:57	ERROR	utils/utils.go:265	ReplicateProcessor addRepEventToCache, fail: replicate count:50 more than 50, event: {"Count":50,"OrderId":"0664f5cd-d73f-4045-9f3c-874b68b1af0d"}
+2023-05-25 18:41:57	ERROR	utils/utils.go:265	ReplicateProcessor addRepEventToCache, fail: replicate count:50 more than 50, event: {"Count":50,"OrderId":"2c8dad73-62da-4357-ae26-a5525929f04b"}

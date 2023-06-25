@@ -1,0 +1,8 @@
+2023-05-25 13:15:55	INFO	task_tracker/task_tracker_api_test.go:47	config: {{{task_tracker_1 chendu_task_tracke_c1 cluster chengdu} ns_group 0.0.0.0:8611} {info} {10.80.8.113:6831} {10000 300 http} {192.168.2.98:8613} {192.168.2.98:8612} {b9319d14e6795244645968ae4a83f0903518af3836c48f6d0ce9460bc815bc16 SEC319c35ae4bdc94d2c54752aeba9d3a8476786c265d83f348249b406558284df6} {kepler 10.80.7.25:27017 mt 123456 5} {10.80.7.28:7001,10.80.7.30:7001 kepler123456 10.80.7.28:7001,10.80.7.30:7001 kepler123456} {kepler}},  schedulerUrl: 192.168.2.98:8612
+2023-05-25 13:15:55	INFO	processor/check_rep_processor.go:33	----init search replicate order num: 0 repChanSize:102400
+2023-05-25 13:15:55	INFO	processor/replicate_porcessor.go:32	----init replicate order total_num: 0 rep_fail order_num: 0 upload finish order_num: 0 repChanSize:102400
+2023-05-25 13:15:55	INFO	processor/delete_processor.go:30	----init delete order num: 0 deleteChanSize:102400
+2023-05-25 13:15:55	INFO	processor/charge_processor.go:34	----init charge order num: 0 chanSize:102400
+2023-05-25 13:15:55	INFO	processor/piece_fid_processor.go:74	init redis cluster success
+2023-05-25 13:15:56	INFO	statemachine/order_create.go:56	 create_upload_order, order_id: acf05f91-ef1b-4e9d-a441-2829ec18d5e3, status: 1, update_time: 1684991756131
+2023-05-25 13:15:58	INFO	statemachine/order_create.go:56	 create_upload_order, order_id: 2fbb23b7-4b1e-4855-8b37-c397be23f53d, status: 1, update_time: 1684991758289
